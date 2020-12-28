@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Tunnel.1.cs.back" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.0" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <EmbeddedResource Include="config.yaml" />
+  </ItemGroup>
+
+</Project>

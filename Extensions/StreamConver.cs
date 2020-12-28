@@ -1,0 +1,28 @@
+﻿using System.IO;
+using System.Text;
+
+namespace MinecraftTunnel.Extensions
+{
+    public static class StreamConver
+    {
+        public static void WriteString(this Stream stream, string value,bool longString)
+        {
+            byte[] arrayOfByte = Encoding.UTF8.GetBytes(value);
+            int Length = arrayOfByte.Length;
+            if (longString)
+                WriteInt(stream, Length);
+            stream.Write(arrayOfByte, 0, arrayOfByte.Length);
+        }
+        public static void WriteInt(this Stream stream,int value)
+        {
+            do
+            {
+                byte b = (byte)(value & 0x7F);
+                value >>= 7;
+                if (value != 0)
+                    b = (byte)(b | 0x80);
+                stream.WriteByte(b);
+            } while (value != 0);
+        }
+    }
+}
