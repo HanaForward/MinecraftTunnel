@@ -21,9 +21,8 @@ namespace MinecraftTunnel
 
         private int m_numConnections;   // the maximum number of connections the sample is designed to handle simultaneously
         private int m_receiveBufferSize;// buffer size to use for each socket I/O operation
-        const int opsToPreAlloc = 2;    // read, write (don't alloc buffer space for accepts)
-        Socket listenSocket;            // the socket used to listen for incoming connection requests
-                                        // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
+        private Socket listenSocket;            // the socket used to listen for incoming connection requests
+                                                // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
 
         private AsyncUserTokenPool m_asyncSocketUserTokenPool;
 
@@ -51,7 +50,6 @@ namespace MinecraftTunnel
             m_maxNumberAcceptedClients = new Semaphore(numConnections, numConnections);
         }
 
-
         public void Init()
         {
             AsyncUserToken userToken;
@@ -63,11 +61,10 @@ namespace MinecraftTunnel
             }
         }
 
-        // Starts the server such that it is listening for
-        // incoming connection requests.
-        //
-        // <param name="localEndPoint">The endpoint which the server will listening
-        // for connection requests on</param>
+        /// <summary>
+        /// 启动tcp服务侦听
+        /// </summary>       
+        /// <param name="port">监听端口</param>
         public void Start(IPEndPoint localEndPoint)
         {
             // create the socket which listens for incoming connections
@@ -79,15 +76,10 @@ namespace MinecraftTunnel
             StartAccept(null);
         }
 
-        // Begins an operation to accept a connection request from the client
-        //
-        // <param name="acceptEventArg">The context object to use when issuing
-        // the accept operation on the server's listening socket</param>
         /// <summary>
-        /// 
-        /// 
+        /// 开始接受客户端的连接请求的操作。
         /// </summary>
-        /// <param name="acceptEventArg"></param>
+        /// <param name="acceptEventArg">发布时要使用的上下文对象服务器侦听套接字上的接受操作</param>
         public void StartAccept(SocketAsyncEventArgs acceptEventArg)
         {
             if (acceptEventArg == null)
@@ -107,14 +99,6 @@ namespace MinecraftTunnel
                 ProcessAccept(acceptEventArg);
             }
         }
-
-        // This method is the callback method associated with Socket.AcceptAsync
-        // operations and is invoked when an accept operation is complete
-        void AcceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
-        {
-            ProcessAccept(e);
-        }
-
 
         /// <summary>
         /// 当异步连接完成时调用此方法
@@ -148,9 +132,20 @@ namespace MinecraftTunnel
             StartAccept(e);
         }
 
-        // This method is called whenever a receive or send operation is completed on a socket
-        //
-        // <param name="e">SocketAsyncEventArg associated with the completed receive operation</param>
+        // This method is the callback method associated with Socket.AcceptAsync
+        // operations and is invoked when an accept operation is complete
+        void AcceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
+        {
+            ProcessAccept(e);
+        }
+
+
+
+        /// <summary>
+        /// 每当套接字上完成接收或发送操作时，都会调用此方法。
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e">与完成的接收操作关联的SocketAsyncEventArg</param>
         void IO_Completed(object sender, SocketAsyncEventArgs e)
         {
             // determine which type of operation just completed and call the associated handler
