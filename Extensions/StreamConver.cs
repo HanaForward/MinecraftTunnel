@@ -24,5 +24,10 @@ namespace MinecraftTunnel.Extensions
                 stream.WriteByte(b);
             } while (value != 0);
         }
+        public static void WriteUShort(this Stream stream, ushort value)
+        {
+            stream.WriteByte((byte)(value >> 8 & 0xFF));
+            stream.WriteByte((byte)(value & 0xFF));
+        }
     }
 }

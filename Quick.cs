@@ -205,7 +205,26 @@ namespace MinecraftTunnel
                     {
                         if (baseProtocol.PacketSize > 3)
                         {
+                            if (userToken.StartLogin)
+                            {
+                                Login login = baseProtocol.Resolve<Login>();
+                                // 准备 Tunnel
+                                // Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
+                                userToken.Tunnel();
+                                userToken.tunnel.Login(login.Name);
+                            }
                             Handshake handshake = baseProtocol.Resolve<Handshake>();
+                            if (handshake.NextState == NextState.login)
+                            {
+                                userToken.StartLogin = true;
+                            }
+                            else
+                            {
+                                userToken.StartLogin = false;
+                            }
+                        }
+                        else
+                        {
                             // 开始处理本次收到的数据包
                             SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
                             using (Block temp = new Block())

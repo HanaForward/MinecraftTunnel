@@ -1,69 +1,42 @@
-﻿using MinecraftTunnel.Extensions;
-using MinecraftTunnel.Protocol;
-using MinecraftTunnel.Protocol.ClientBound;
+﻿using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Protocol.ServerBound;
+using socket.core.Client;
 using System;
-using System.IO;
-using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 
 namespace MinecraftTunnel
 {
     public class Tunnel
     {
-        private Socket socket;
-        Thread thread;
+        private readonly TcpPushClient client;
+
+
         private AsyncUserToken asyncUserToken;
 
         public Tunnel(string IP, int Port)
         {
-            socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            client = new TcpPushClient(ushort.MaxValue);
 
-            try
-            {
-                socket.Connect(IPAddress.Parse(IP), Port);
-            }
-            catch
-            {
-                Console.WriteLine("连接服务器失败，请按回车键退出！");
-                return;
-            }
+            client.OnReceive += Client_OnReceive;
+            client.OnSend += Client_OnSend;
 
-
-            thread = new Thread(StartReceive);
-            thread.IsBackground = true;
-            thread.Start(socket);
-
-            Thread.Sleep(200);
+            client.Connect(IP, Port);
         }
 
-        internal void Ping(Pong pong)
+        private void Client_OnSend(int obj)
         {
-            
-            byte[] buffer;
-            using (Block block = new Block())
-            {
-                block.WriteInt(1);
-                block.WriteLong(pong.Payload);
-                buffer = block.GetBytes();
-            }
-            MemoryStream memoryStream = new MemoryStream();
-            memoryStream.WriteInt(buffer.Length);
-            memoryStream.Write(buffer);
-            socket.Send(memoryStream.GetBuffer(), 0, (int)memoryStream.Position - 1, SocketFlags.None);
+            Console.WriteLine("Client_OnSend : " + obj);
         }
 
-        private void StartReceive(object obj)
+        private void Client_OnReceive(byte[] obj)
         {
-            Socket receiveSocket = obj as Socket;
-            while (true)
-            {
-                byte[] buf = new byte[ushort.MaxValue];
-                int Size = receiveSocket.Receive(buf);
-                Console.WriteLine("接收服务器消息：{0}", Encoding.ASCII.GetString(buf, 0, Size));
-            }
+            asyncUserToken.Client.Send(obj);
+            Console.WriteLine("Client_OnReceive : " + obj.Length);
+        }
+
+        public void Send(byte[] data, int offset, int length)
+        {
+
         }
 
         public void Bind(AsyncUserToken asyncUserToken)
@@ -71,24 +44,22 @@ namespace MinecraftTunnel
             this.asyncUserToken = asyncUserToken;
         }
 
-        public void Login(Handshake handshake)
+        public void Login(string Name)
         {
-            byte[] buffer;
-            using (Block block = new Block())
-            {
-                block.WriteInt(0);
-                block.WriteInt(handshake.ProtocolVersion);
-                block.WriteString("mc.hypixel.net", true);
-                block.WriteUShort(handshake.ServerPort);
-                block.WriteInt((int)handshake.NextState);
-                buffer = block.GetBytes();
-            }
-            MemoryStream memoryStream = new MemoryStream();
-            memoryStream.WriteInt(buffer.Length);
-            memoryStream.Write(buffer);
-            socket.Send(memoryStream.GetBuffer(), 0, (int)memoryStream.Position - 1, SocketFlags.None);
+            BaseProtocol baseProtocol = new BaseProtocol();
+            Handshake handshake = new Handshake();
+            handshake.ProtocolVersion = 578;
+            handshake.ServerAddress = "mc.hypixel.net";
+            handshake.ServerPort = 25565;
+            handshake.NextState = NextState.login;
+            byte[] buffer = baseProtocol.Pack(handshake);
+            client.Send(buffer, 0, buffer.Length);
+            Login login = new Login();
+            login.Name = Name;
+            buffer = baseProtocol.Pack(login);
+            client.Send(buffer, 0, buffer.Length);
+            Console.WriteLine($"Login完毕");
         }
-
 
         public void IO_Completed(object arg1, SocketAsyncEventArgs e)
         {
@@ -97,23 +68,17 @@ namespace MinecraftTunnel
                 case SocketAsyncOperation.Receive:
                     ProcessReceive(e);
                     break;
-                case SocketAsyncOperation.Send:
-                    //ProcessSend(e);
-                    break;
                 default:
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
         }
-
-
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
             AsyncUserToken userToken = (AsyncUserToken)e.UserToken;
             int offset = userToken.ReceiveEventArgs.Offset;
             int count = userToken.ReceiveEventArgs.BytesTransferred;
-            byte[] receiveBuffer = new byte[e.BytesTransferred];
-            Array.Copy(userToken.ReceiveEventArgs.Buffer, e.Offset, receiveBuffer, 0, e.BytesTransferred);
-            socket.Send(receiveBuffer);
+            byte[] Buffer = userToken.ReceiveEventArgs.Buffer;
+            client.Send(Buffer, offset, count);
         }
     }
 }

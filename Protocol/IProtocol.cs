@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MinecraftTunnel.Protocol
+﻿namespace MinecraftTunnel.Protocol
 {
     public interface IProtocol
     {
+        int PacketId { get; }
         void Analyze(Block block);
+        byte[] Pack();
     }
 }

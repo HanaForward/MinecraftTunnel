@@ -1,4 +1,7 @@
-﻿namespace MinecraftTunnel.Protocol.ServerBound
+﻿using MinecraftTunnel.Extensions;
+using System.IO;
+
+namespace MinecraftTunnel.Protocol.ServerBound
 {
     public class Handshake : IProtocol
     {
@@ -18,7 +21,7 @@
         /// 下一步状态
         /// </summary>
         public NextState NextState;
-
+        public int PacketId { get; private set; } = 0;
         public void Analyze(Block block)
         {
             ProtocolVersion = block.readVarInt();
@@ -27,8 +30,18 @@
             ServerPort = block.readShort();
             NextState = (NextState)block.readVarInt();
         }
-
-
+        public byte[] Pack()
+        {
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                memoryStream.WriteInt(PacketId);
+                memoryStream.WriteInt(ProtocolVersion);
+                memoryStream.WriteString(ServerAddress, true);
+                memoryStream.WriteUShort(ServerPort);
+                memoryStream.WriteInt((int)NextState);
+                return memoryStream.ToArray();
+            }
+        }
     }
     public enum NextState
     {

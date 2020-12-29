@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using MinecraftTunnel.Model;
+using MinecraftTunnel.Protocol;
+using MinecraftTunnel.Protocol.ServerBound;
 using socket.core.Server;
 using System;
 using System.IO;
@@ -16,6 +18,7 @@ namespace MinecraftTunnel
 
         public static void Main(string[] args)
         {
+            
             var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddYamlFile("appsettings.yaml");
             Configuration = builder.Build();
 
@@ -34,7 +37,10 @@ namespace MinecraftTunnel
 
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, 25565);
             stateContext.Start(serverIP);
-         
+
+            
+            //Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
+           
             Console.ReadKey();
         }
 

@@ -49,5 +49,6 @@ namespace MinecraftTunnel
         public SocketAsyncEventArgs SendEventArgs;
 
         public Socket Client;
+        internal bool StartLogin;
     }
 }
