@@ -76,7 +76,15 @@ namespace MinecraftTunnel.Protocol
             byte b = readByte();
             return (ushort)((b << 8) + (readByte() & 0xFF));
         }
-
+        public long readLong()
+        {
+            byte[] temp = new byte[8];
+            Array.Copy(buffer, step, temp, 0, 8);
+            step += 8;
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(temp);
+            return BitConverter.ToInt64(temp, 0);
+        }
 
         public byte[] GetBytes()
         {
@@ -127,6 +135,9 @@ namespace MinecraftTunnel.Protocol
                 Array.Reverse(bytes);
             stream.Write(bytes);
         }
+
+
+
         [Obsolete]
         public void SetSize(int size)
         {
@@ -140,14 +151,5 @@ namespace MinecraftTunnel.Protocol
             buffer = null;
         }
 
-        public long readLong()
-        {
-            byte[] temp = new byte[8];
-            Array.Copy(buffer, step, temp, 0, 8);
-            step += 8;
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(temp);
-            return BitConverter.ToInt64(temp, 0);
-        }
     }
 }

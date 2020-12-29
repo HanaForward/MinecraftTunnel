@@ -1,6 +1,6 @@
 ﻿namespace MinecraftTunnel.Protocol.ServerBound
 {
-    public struct Handshake
+    public class Handshake : IProtocol
     {
         /// <summary>
         /// 协议版本
@@ -18,9 +18,20 @@
         /// 下一步状态
         /// </summary>
         public NextState NextState;
+
+        public void Analyze(Block block)
+        {
+            ProtocolVersion = block.readVarInt();
+            int ServerAddressLength = block.readVarInt();
+            ServerAddress = block.readString(ServerAddressLength);
+            ServerPort = block.readShort();
+            NextState = (NextState)block.readVarInt();
+        }
+
+
     }
     public enum NextState
-    { 
+    {
         status = 1,
         login = 2
     }

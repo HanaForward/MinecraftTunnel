@@ -1,0 +1,22 @@
+﻿# 最大连接数,超过连接数后的连接不在被处理
+MaxConnections : 1000
+
+#服务器监听的端口
+Server:
+   IP : 0.0.0.0
+   Port : 25565
+
+#转发的目标
+Nat:
+   IP: 0.0.0.0
+   Port : 0.0.0.0
+
+#Motd
+Motd: "这里设置Motd"
+
+#Ping(Scr,Nat,Null)
+#三种模式：
+#Scr 输出 客户端 到 转发机的延迟
+#Nat 输出 客户端 到 服务器的延迟
+#Null不会暴露延迟
+Ping : "Scr"

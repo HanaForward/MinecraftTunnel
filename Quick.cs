@@ -12,6 +12,13 @@ namespace MinecraftTunnel
 {
     public class StateContext
     {
+        #region 事件  
+        public event Action OnAccept;                                       // 连接成功事件
+        public event Action<AsyncUserToken, byte[], int, int> OnReceive;    // 接受数据事件
+        public event Action<int, int> OnSend;                               // 发送数据事件
+        public event Action OnClose;                                        // 连接关闭事件
+        #endregion
+
         private int m_numConnections;   // the maximum number of connections the sample is designed to handle simultaneously
         private int m_receiveBufferSize;// buffer size to use for each socket I/O operation
         const int opsToPreAlloc = 2;    // read, write (don't alloc buffer space for accepts)
@@ -21,7 +28,8 @@ namespace MinecraftTunnel
         private AsyncUserTokenPool m_asyncSocketUserTokenPool;
 
         int m_totalBytesRead;           // counter of the total # bytes received by the server
-        int m_numConnectedSockets;      // the total number of clients connected to the server
+
+        int m_numConnectedSockets;      // 当前连接数
         Semaphore m_maxNumberAcceptedClients;
 
         // Create an uninitialized server instance.
@@ -83,6 +91,11 @@ namespace MinecraftTunnel
         //
         // <param name="acceptEventArg">The context object to use when issuing
         // the accept operation on the server's listening socket</param>
+        /// <summary>
+        /// 
+        /// 
+        /// </summary>
+        /// <param name="acceptEventArg"></param>
         public void StartAccept(SocketAsyncEventArgs acceptEventArg)
         {
             if (acceptEventArg == null)
@@ -112,27 +125,32 @@ namespace MinecraftTunnel
             ProcessAccept(e);
         }
 
+
+        /// <summary>
+        /// 当异步连接完成时调用此方法
+        /// </summary>
+        /// <param name="e">操作对象</param>
         private void ProcessAccept(SocketAsyncEventArgs e)
         {
+            // 原子操作,增加一个客户端数量
             Interlocked.Increment(ref m_numConnectedSockets);
-            Console.WriteLine("Client connection accepted. There are {0} clients connected to the server",
-                m_numConnectedSockets);
+            Console.WriteLine("Client connection accepted. There are {0} clients connected to the server", m_numConnectedSockets);
 
-            // Get the socket for the accepted client connection and put it into the
-            //ReadEventArg object user token
-
+            // 从接受端重用池获取一个新的SocketAsyncEventArgs对象
             AsyncUserToken userToken = m_asyncSocketUserTokenPool.Pop();
             userToken.Client = e.AcceptSocket;
-            //SocketAsyncEventArgs readEventArgs = m_asyncSocketUserTokenPool.Pop();
-            //((AsyncUserToken)readEventArgs.UserToken).Socket = e.AcceptSocket;
-            // As soon as the client is connected, post a receive to the connection
+
+            // 一旦客户机连接，就准备接收。
             bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(userToken.ReceiveEventArgs);
             if (!willRaiseEvent)
             {
                 ProcessReceive(userToken.ReceiveEventArgs);
             }
-
-            // Accept the next connection request
+            if (OnAccept != null)
+            {
+                OnAccept();
+            }
+            // 接受第二连接的请求
             StartAccept(e);
         }
 
@@ -147,54 +165,49 @@ namespace MinecraftTunnel
                 case SocketAsyncOperation.Receive:
                     ProcessReceive(e);
                     break;
-                case SocketAsyncOperation.Send:
-                    ProcessSend(e);
-                    break;
                 default:
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
         }
 
-        // This method is invoked when an asynchronous receive operation completes.
-        // If the remote host closed the connection, then the socket is closed.
-        // If data was received then the data is echoed back to the client.
-        //
+        /// <summary>
+        /// 接受处理回调
+        /// </summary>
+        /// <param name="e">操作对象</param>
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
-            // check if the remote host closed the connection
+            // 检查远程主机是否关闭连接
             AsyncUserToken userToken = (AsyncUserToken)e.UserToken;
-            if (userToken.ReceiveEventArgs.BytesTransferred > 0 && userToken.ReceiveEventArgs.SocketError == SocketError.Success)
+
+            int offset = userToken.ReceiveEventArgs.Offset;
+            int count = userToken.ReceiveEventArgs.BytesTransferred;
+            byte[] Buffer = userToken.ReceiveEventArgs.Buffer;
+
+            if (count > 0 && userToken.ReceiveEventArgs.SocketError == SocketError.Success)
             {
-                int offset = userToken.ReceiveEventArgs.Offset;
-                int count = userToken.ReceiveEventArgs.BytesTransferred;
+                Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
 
-                if (count > 0)
+
+                Block block = new Block(Buffer);
+                BaseProtocol baseProtocol = new BaseProtocol();
+                baseProtocol.Analyze(block);
+
+                while (offset < count)
                 {
-                    Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
-                    Console.WriteLine("The server has read a total of {0} bytes", m_totalBytesRead);
-
- 
-                    SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
-
-                    byte[] receiveBuffer = new byte[e.BytesTransferred];
-                    Array.Copy(userToken.ReceiveEventArgs.Buffer, e.Offset, receiveBuffer, 0, e.BytesTransferred);
-
-                    Block receive = new Block(receiveBuffer);
-                    int PacketSize = receive.readVarInt();
-                    int PacketId = receive.readVarInt();
-
-                    if (PacketId == 0)
+                    offset++;
+                    // 需要处理分包
+                    byte[] packet = new byte[baseProtocol.PacketSize];
+                    Array.Copy(Buffer, offset, packet, 0, baseProtocol.PacketSize);
+                    offset += baseProtocol.PacketSize;
+                    // 回调               
+                    OnReceive?.Invoke(userToken, packet, offset, baseProtocol.PacketSize);
+                    if (baseProtocol.PacketId == 0)
                     {
-
-                        Handshake handshake = new Handshake();
-                        handshake.ProtocolVersion = receive.readVarInt();
-                        int ServerAddressLength = receive.readVarInt();
-                        handshake.ServerAddress = receive.readString(ServerAddressLength);
-                        handshake.ServerPort = receive.readShort();
-                        handshake.NextState = (NextState)receive.readVarInt();
-
-                        if (handshake.NextState == NextState.status)
+                        if (baseProtocol.PacketSize > 3)
                         {
+                            Handshake handshake = baseProtocol.Resolve<Handshake>();
+                            // 开始处理本次收到的数据包
+                            SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
                             using (Block temp = new Block())
                             {
                                 temp.WriteInt(0);
@@ -210,18 +223,11 @@ namespace MinecraftTunnel
                                 Console.Out.WriteLine("New player.");
                             }
                         }
-                        else if (handshake.NextState == NextState.login)
-                        {
-                           
-                            userToken.Tunnel();
-                            userToken.tunnel.Login(handshake);
-                            return;
-                        }
                     }
-                    else if (PacketId == 1)
+                    else if (baseProtocol.PacketId == 1)
                     {
-                        Pong pong = new Pong();
-                        pong.Payload = receive.readLong();
+                        SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
+                        Pong pong = baseProtocol.Resolve<Pong>();
                         using (Block temp = new Block())
                         {
                             temp.WriteInt(1);
@@ -237,7 +243,10 @@ namespace MinecraftTunnel
                             userToken.Client.SendAsync(sendPacket);
                         }
                     }
+                    baseProtocol.Analyze(block);
                 }
+
+                // 准备下次接收数据      
                 bool willRaiseEvent = userToken.Client.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
                 if (!willRaiseEvent)
                     ProcessReceive(userToken.ReceiveEventArgs);
