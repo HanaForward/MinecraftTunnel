@@ -48,21 +48,16 @@ namespace MinecraftTunnel
             m_receiveBufferSize = receiveBufferSize;
             // allocate buffers such that the maximum number of sockets can have one outstanding read and
             //write posted to the socket simultaneously
-
             m_maxNumberAcceptedClients = new Semaphore(numConnections, numConnections);
         }
 
-        // Initializes the server by preallocating reusable buffers and
-        // context objects.  These objects do not need to be preallocated
-        // or reused, but it is done this way to illustrate how the API can
-        // easily be used to create reusable objects to increase server performance.
-        //
+
         public void Init()
         {
             AsyncUserToken userToken;
             for (int i = 0; i < m_numConnections; i++) //按照连接数建立读写对象
             {
-                userToken = new AsyncUserToken(1024);
+                userToken = new AsyncUserToken(m_receiveBufferSize);
                 userToken.Completed(IO_Completed);
                 m_asyncSocketUserTokenPool.Push(userToken);
             }
@@ -82,9 +77,6 @@ namespace MinecraftTunnel
             listenSocket.Listen(100);
             // post accepts on the listening socket
             StartAccept(null);
-            //Console.WriteLine("{0} connected sockets with one outstanding receive posted to each....press any key", m_outstandingReadCount);
-            Console.WriteLine("Press any key to terminate the server process....");
-            Console.ReadKey();
         }
 
         // Begins an operation to accept a connection request from the client
@@ -108,7 +100,6 @@ namespace MinecraftTunnel
                 // socket must be cleared since the context object is being reused
                 acceptEventArg.AcceptSocket = null;
             }
-
             m_maxNumberAcceptedClients.WaitOne();
             bool willRaiseEvent = listenSocket.AcceptAsync(acceptEventArg);
             if (!willRaiseEvent)
@@ -119,7 +110,6 @@ namespace MinecraftTunnel
 
         // This method is the callback method associated with Socket.AcceptAsync
         // operations and is invoked when an accept operation is complete
-        //
         void AcceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
         {
             ProcessAccept(e);
@@ -134,8 +124,9 @@ namespace MinecraftTunnel
         {
             // 原子操作,增加一个客户端数量
             Interlocked.Increment(ref m_numConnectedSockets);
-            Console.WriteLine("Client connection accepted. There are {0} clients connected to the server", m_numConnectedSockets);
-
+#if DEBUG
+            Console.WriteLine("客户端进入!当前有 {0} 名客户端", m_numConnectedSockets);
+#endif
             // 从接受端重用池获取一个新的SocketAsyncEventArgs对象
             AsyncUserToken userToken = m_asyncSocketUserTokenPool.Pop();
             userToken.Client = e.AcceptSocket;
@@ -310,13 +301,15 @@ namespace MinecraftTunnel
             }
             // throws if client process has already closed
             catch (Exception) { }
-            token.Client.Close();
+            token.Close();
             // decrement the counter keeping track of the total number of clients connected to the server
             Interlocked.Decrement(ref m_numConnectedSockets);
             // Free the SocketAsyncEventArg so they can be reused by another client
             m_asyncSocketUserTokenPool.Push(token);
             m_maxNumberAcceptedClients.Release();
-            Console.WriteLine("A client has been disconnected from the server. There are {0} clients connected to the server", m_numConnectedSockets);
+#if DEBUG
+            Console.WriteLine("客户端连接断开!当前还有 {0} 名客户端", m_numConnectedSockets);
+#endif
         }
     }
 }

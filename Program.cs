@@ -1,8 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using MinecraftTunnel.Model;
-using MinecraftTunnel.Protocol;
-using MinecraftTunnel.Protocol.ServerBound;
-using socket.core.Server;
 using System;
 using System.IO;
 using System.Net;
@@ -12,36 +9,29 @@ namespace MinecraftTunnel
     public class Program
     {
         private static ushort MaxConnections;
-        private static TcpPushServer tcpPushServer;
         public static IConfigurationRoot Configuration { get; set; }
-
 
         public static void Main(string[] args)
         {
-            
             var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddYamlFile("appsettings.yaml");
             Configuration = builder.Build();
 
             _ = ushort.TryParse(Configuration["MaxConnections"], out MaxConnections);
             var ServerConnectConfig = Configuration.GetSection("Server").Get<ConnectConfig>();
-
-
-            StateContext stateContext = new StateContext(5, 500);
+            StateContext stateContext = new StateContext(MaxConnections, ushort.MaxValue);
             stateContext.Init();
 
+#if DEBUG
             stateContext.OnAccept += Server_OnAccept;
             stateContext.OnReceive += Server_OnReceive;
             stateContext.OnSend += Server_OnSend;
             stateContext.OnClose += Server_OnClose;
-
+#endif
 
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, 25565);
             stateContext.Start(serverIP);
 
-            
-            //Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
-           
-            Console.ReadKey();
+             Console.ReadKey();
         }
 
         private static void Server_OnAccept()

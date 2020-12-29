@@ -9,36 +9,21 @@ namespace MinecraftTunnel
     public class Tunnel
     {
         private readonly TcpPushClient client;
-
-
         private AsyncUserToken asyncUserToken;
-
         public Tunnel(string IP, int Port)
         {
             client = new TcpPushClient(ushort.MaxValue);
-
             client.OnReceive += Client_OnReceive;
-            client.OnSend += Client_OnSend;
-
             client.Connect(IP, Port);
-        }
-
-        private void Client_OnSend(int obj)
-        {
-            Console.WriteLine("Client_OnSend : " + obj);
         }
 
         private void Client_OnReceive(byte[] obj)
         {
             asyncUserToken.Client.Send(obj);
+#if DEBUG
             Console.WriteLine("Client_OnReceive : " + obj.Length);
+#endif
         }
-
-        public void Send(byte[] data, int offset, int length)
-        {
-
-        }
-
         public void Bind(AsyncUserToken asyncUserToken)
         {
             this.asyncUserToken = asyncUserToken;
@@ -79,6 +64,12 @@ namespace MinecraftTunnel
             int count = userToken.ReceiveEventArgs.BytesTransferred;
             byte[] Buffer = userToken.ReceiveEventArgs.Buffer;
             client.Send(Buffer, offset, count);
+        }
+
+        public void Clost()
+        {
+            asyncUserToken = null;
+            client.Close();
         }
     }
 }
