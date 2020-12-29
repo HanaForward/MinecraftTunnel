@@ -19,12 +19,12 @@ namespace MinecraftTunnel
             SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.UserToken = this;
         }
-        public void Tunnel()
+        public void Tunnel(StateContext stateContext)
         {
             ConnectDateTime = DateTime.Now;
             UnCompleted();
             tunnel = new Tunnel("172.65.234.205", 25565);
-            tunnel.Bind(this);
+            tunnel.Bind(stateContext, this);
             Completed(tunnel.IO_Completed);
         }
         public void Completed(Action<object, SocketAsyncEventArgs> IO_Completed)

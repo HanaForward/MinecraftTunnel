@@ -9,7 +9,8 @@ namespace MinecraftTunnel
     public class Tunnel
     {
         private readonly TcpPushClient client;
-        private AsyncUserToken asyncUserToken;
+        private StateContext stateContext;
+        private AsyncUserToken userToken;
         public Tunnel(string IP, int Port)
         {
             client = new TcpPushClient(ushort.MaxValue);
@@ -19,14 +20,15 @@ namespace MinecraftTunnel
 
         private void Client_OnReceive(byte[] obj)
         {
-            asyncUserToken.Client.Send(obj);
+            userToken.Client.Send(obj);
 #if DEBUG
             Console.WriteLine("Client_OnReceive : " + obj.Length);
 #endif
         }
-        public void Bind(AsyncUserToken asyncUserToken)
+        public void Bind(StateContext stateContext, AsyncUserToken asyncUserToken)
         {
-            this.asyncUserToken = asyncUserToken;
+            this.stateContext = stateContext;
+            this.userToken = asyncUserToken;
         }
 
         public void Login(string Name)
@@ -63,12 +65,22 @@ namespace MinecraftTunnel
             int offset = userToken.ReceiveEventArgs.Offset;
             int count = userToken.ReceiveEventArgs.BytesTransferred;
             byte[] Buffer = userToken.ReceiveEventArgs.Buffer;
-            client.Send(Buffer, offset, count);
+            if (count > 0 && userToken.ReceiveEventArgs.SocketError == SocketError.Success)
+            {
+                client.Send(Buffer, offset, count);
+                // 准备下次接收数据      
+                bool willRaiseEvent = userToken.Client.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
+                if (!willRaiseEvent)
+                    ProcessReceive(userToken.ReceiveEventArgs);
+            }
+            else {
+                stateContext.CloseClientSocket(e);
+            }
         }
 
         public void Clost()
         {
-            asyncUserToken = null;
+            userToken = null;
             client.Close();
         }
     }

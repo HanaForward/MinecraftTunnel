@@ -22,10 +22,10 @@ namespace MinecraftTunnel
             stateContext.Init();
 
 #if DEBUG
-            stateContext.OnAccept += Server_OnAccept;
+            //stateContext.OnAccept += Server_OnAccept;
             stateContext.OnReceive += Server_OnReceive;
             stateContext.OnSend += Server_OnSend;
-            stateContext.OnClose += Server_OnClose;
+            //stateContext.OnClose += Server_OnClose;
 #endif
 
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, 25565);

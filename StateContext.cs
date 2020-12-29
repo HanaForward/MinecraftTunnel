@@ -129,8 +129,11 @@ namespace MinecraftTunnel
 #endif
             // 从接受端重用池获取一个新的SocketAsyncEventArgs对象
             AsyncUserToken userToken = m_asyncSocketUserTokenPool.Pop();
-            userToken.Client = e.AcceptSocket;
 
+            userToken.UnCompleted();
+            userToken.Completed(IO_Completed);
+
+            userToken.Client = e.AcceptSocket;
             // 一旦客户机连接，就准备接收。
             bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(userToken.ReceiveEventArgs);
             if (!willRaiseEvent)
@@ -190,8 +193,10 @@ namespace MinecraftTunnel
                     byte[] packet = new byte[baseProtocol.PacketSize];
                     Array.Copy(Buffer, offset, packet, 0, baseProtocol.PacketSize);
                     offset += baseProtocol.PacketSize;
+
                     // 回调               
                     OnReceive?.Invoke(userToken, packet, offset, baseProtocol.PacketSize);
+
                     if (baseProtocol.PacketId == 0)
                     {
                         if (baseProtocol.PacketSize > 3)
@@ -201,7 +206,8 @@ namespace MinecraftTunnel
                                 Login login = baseProtocol.Resolve<Login>();
                                 // 准备 Tunnel
                                 // Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
-                                userToken.Tunnel();
+                                Console.WriteLine("Tunnel");
+                                userToken.Tunnel(this);
                                 userToken.tunnel.Login(login.Name);
                             }
                             Handshake handshake = baseProtocol.Resolve<Handshake>();
@@ -291,7 +297,7 @@ namespace MinecraftTunnel
             }
         }
 
-        private void CloseClientSocket(SocketAsyncEventArgs e)
+        public void CloseClientSocket(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
             // close the socket associated with the client
