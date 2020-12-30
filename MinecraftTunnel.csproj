@@ -30,7 +30,7 @@
 
   <ItemGroup>
     <Compile Update="Model\ConnectConfig.cs">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
   </ItemGroup>
 

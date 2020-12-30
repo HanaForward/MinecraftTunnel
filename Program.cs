@@ -30,7 +30,7 @@ namespace MinecraftTunnel
             NatConfig = Configuration.GetSection("Nat").Get<ConnectConfig>();
             QueryConfig = Configuration.GetSection("Query").Get<QueryConfig>();
 
-            StateContext stateContext = new StateContext(MaxConnections, ushort.MaxValue);
+            StateContext stateContext = new StateContext(MaxConnections, 1024 * 1024);
             stateContext.Init();
 
 #if DEBUG
@@ -43,7 +43,7 @@ namespace MinecraftTunnel
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, ServerConfig.Port);
             stateContext.Start(serverIP);
 
-             Console.ReadKey();
+            Console.ReadKey();
         }
 
         private static void Server_OnAccept()

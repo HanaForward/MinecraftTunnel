@@ -1,5 +1,5 @@
 ﻿# 最大连接数,超过连接数后的连接不在被处理
-MaxConnections : 1
+MaxConnections : 100
 
 #服务器监听的端口
 Server:
@@ -8,8 +8,8 @@ Server:
 
 #转发的目标
 Nat:
-   IP: 172.65.234.205
-   Port : 25565
+   IP: 160.119.70.178
+   Port : 10001
 
 #Query
 Query:
