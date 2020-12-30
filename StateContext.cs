@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 
@@ -22,17 +21,12 @@ namespace MinecraftTunnel
         public event Action OnClose;                                        // 连接关闭事件
         #endregion
 
-        private int m_numConnections;   // the maximum number of connections the sample is designed to handle simultaneously
-        private int m_receiveBufferSize;// buffer size to use for each socket I/O operation
-        private Socket listenSocket;            // the socket used to listen for incoming connection requests
-                                                // pool of reusable SocketAsyncEventArgs objects for write, read and accept socket operations
-
-        private AsyncUserTokenPool m_asyncSocketUserTokenPool;
-
-        int m_totalBytesRead;           // counter of the total # bytes received by the server
-
-        int m_numConnectedSockets;      // 当前连接数
-        Semaphore m_maxNumberAcceptedClients;
+        private int MaxConnections, BufferSize;
+        private Socket ServerSocket;
+        private AsyncUserTokenPool TokenPool;
+        private int TotalBytesRead, TotalBytesSend;
+        private int ConnectedSockets;
+        Semaphore semaphore;
 
         // Create an uninitialized server instance.
         // To start the server listening for connection requests
@@ -40,28 +34,28 @@ namespace MinecraftTunnel
         //
         // <param name="numConnections">the maximum number of connections the sample is designed to handle simultaneously</param>
         // <param name="receiveBufferSize">buffer size to use for each socket I/O operation</param>
-        public StateContext(int numConnections, int receiveBufferSize)
+        public StateContext(int MaxConnections, int BufferSize)
         {
-            m_asyncSocketUserTokenPool = new AsyncUserTokenPool(numConnections);
+            TokenPool = new AsyncUserTokenPool(MaxConnections);
 
-            m_totalBytesRead = 0;
-            m_numConnectedSockets = 0;
-            m_numConnections = numConnections;
-            m_receiveBufferSize = receiveBufferSize;
+            TotalBytesRead = 0;
+            ConnectedSockets = 0;
+            this.MaxConnections = MaxConnections;
+            this.BufferSize = BufferSize;
             // allocate buffers such that the maximum number of sockets can have one outstanding read and
             //write posted to the socket simultaneously
-            m_maxNumberAcceptedClients = new Semaphore(numConnections, numConnections);
+            semaphore = new Semaphore(MaxConnections, MaxConnections);
         }
 
         public void Init()
         {
             AsyncUserToken userToken;
-            for (int i = 0; i < m_numConnections; i++) //按照连接数建立读写对象
+            for (int i = 0; i < MaxConnections; i++) //按照连接数建立读写对象
             {
-                userToken = new AsyncUserToken(m_receiveBufferSize);
+                userToken = new AsyncUserToken(BufferSize);
                 userToken.SetComplete(IO_Completed);
                 userToken.Completed();
-                m_asyncSocketUserTokenPool.Push(userToken);
+                TokenPool.Push(userToken);
             }
         }
 
@@ -71,12 +65,9 @@ namespace MinecraftTunnel
         /// <param name="port">监听端口</param>
         public void Start(IPEndPoint localEndPoint)
         {
-            // create the socket which listens for incoming connections
-            listenSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            listenSocket.Bind(localEndPoint);
-            // start the server with a listen backlog of 100 connections
-            listenSocket.Listen(100);
-            // post accepts on the listening socket
+            ServerSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            ServerSocket.Bind(localEndPoint);
+            ServerSocket.Listen(100);
             StartAccept(null);
         }
 
@@ -96,8 +87,8 @@ namespace MinecraftTunnel
                 // socket must be cleared since the context object is being reused
                 acceptEventArg.AcceptSocket = null;
             }
-            m_maxNumberAcceptedClients.WaitOne();
-            bool willRaiseEvent = listenSocket.AcceptAsync(acceptEventArg);
+            semaphore.WaitOne();
+            bool willRaiseEvent = ServerSocket.AcceptAsync(acceptEventArg);
             if (!willRaiseEvent)
             {
                 ProcessAccept(acceptEventArg);
@@ -111,17 +102,12 @@ namespace MinecraftTunnel
         private void ProcessAccept(SocketAsyncEventArgs e)
         {
             // 原子操作,增加一个客户端数量
-            Interlocked.Increment(ref m_numConnectedSockets);
+            Interlocked.Increment(ref ConnectedSockets);
 #if DEBUG
-            Console.WriteLine("客户端进入!当前有 {0} 名客户端", m_numConnectedSockets);
+            Console.WriteLine("客户端进入!当前有 {0} 名客户端", ConnectedSockets);
 #endif
             // 从接受端重用池获取一个新的SocketAsyncEventArgs对象
-            AsyncUserToken userToken = m_asyncSocketUserTokenPool.Pop();
-
-            userToken.UnCompleted();
-            userToken.SetComplete(IO_Completed);
-            userToken.Completed();
-
+            AsyncUserToken userToken = TokenPool.Pop();
             userToken.ServerSocket = e.AcceptSocket;
             // 一旦客户机连接，就准备接收。
             bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(userToken.ReceiveEventArgs);
@@ -143,9 +129,6 @@ namespace MinecraftTunnel
         {
             ProcessAccept(e);
         }
-
-
-
         /// <summary>
         /// 每当套接字上完成接收或发送操作时，都会调用此方法。
         /// </summary>
@@ -179,13 +162,10 @@ namespace MinecraftTunnel
 
             if (count > 0 && userToken.ReceiveEventArgs.SocketError == SocketError.Success)
             {
-                Interlocked.Add(ref m_totalBytesRead, e.BytesTransferred);
-
-
+                Interlocked.Add(ref TotalBytesRead, e.BytesTransferred);
                 Block block = new Block(Buffer);
                 BaseProtocol baseProtocol = new BaseProtocol();
                 baseProtocol.Analyze(block);
-
                 while (offset < count)
                 {
                     offset++;
@@ -314,21 +294,25 @@ namespace MinecraftTunnel
         public void CloseClientSocket(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;
-            // close the socket associated with the client
             try
             {
                 token.ServerSocket.Shutdown(SocketShutdown.Send);
             }
-            // throws if client process has already closed
             catch (Exception) { }
             token.Close();
-            // decrement the counter keeping track of the total number of clients connected to the server
-            Interlocked.Decrement(ref m_numConnectedSockets);
-            // Free the SocketAsyncEventArg so they can be reused by another client
-            m_asyncSocketUserTokenPool.Push(token);
-            m_maxNumberAcceptedClients.Release();
+
+            Interlocked.Decrement(ref ConnectedSockets);
+
+            if (null == token.IO_Completed)
+            {
+                token.SetComplete(IO_Completed);
+                token.Completed();
+            }
+
+            TokenPool.Push(token);
+            semaphore.Release();
 #if DEBUG
-            Console.WriteLine("客户端连接断开!当前还有 {0} 名客户端", m_numConnectedSockets);
+            Console.WriteLine("客户端连接断开!当前还有 {0} 名客户端", ConnectedSockets);
 #endif
         }
     }

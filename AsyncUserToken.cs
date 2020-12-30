@@ -6,32 +6,37 @@ namespace MinecraftTunnel
     public class AsyncUserToken
     {
         public Tunnel tunnel;
-        protected byte[] m_asyncReceiveBuffer;
+        protected byte[] ReceiveBuffer;
         protected DateTime ConnectDateTime;// 连接时间
-        private Action<object, SocketAsyncEventArgs> IO_Completed;
+        public Action<object, SocketAsyncEventArgs> IO_Completed;
+
+        public SocketAsyncEventArgs ReceiveEventArgs;
+        public SocketAsyncEventArgs SendEventArgs;
+        public Socket ServerSocket;
+        public bool StartLogin = false;
+        public int ProtocolVersion;
+
         public AsyncUserToken(int ReceiveBufferSize)
         {
-            m_asyncReceiveBuffer = new byte[ReceiveBufferSize];
+            ReceiveBuffer = new byte[ReceiveBufferSize];
 
             ReceiveEventArgs = new SocketAsyncEventArgs();
             ReceiveEventArgs.UserToken = this;
-            ReceiveEventArgs.SetBuffer(m_asyncReceiveBuffer, 0, m_asyncReceiveBuffer.Length);
+            ReceiveEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
             SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.UserToken = this;
         }
         public void Tunnel(StateContext stateContext)
         {
-            ConnectDateTime = DateTime.Now;
             UnCompleted();
-            SetComplete(null);
-
+            ConnectDateTime = DateTime.Now;
             tunnel = new Tunnel(Program.NatConfig.IP, Program.NatConfig.Port);
             tunnel.Bind(stateContext, this);
-
             SetComplete(tunnel.IO_Completed);
             Completed();
         }
 
+        #region Complete
         public void SetComplete(Action<object, SocketAsyncEventArgs> IO_Completed)
         {
             this.IO_Completed = IO_Completed;
@@ -52,19 +57,14 @@ namespace MinecraftTunnel
                 SendEventArgs.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
             }
         }
-
-        public SocketAsyncEventArgs ReceiveEventArgs;
-        public SocketAsyncEventArgs SendEventArgs;
-
-        public Socket ServerSocket; 
-
-        public bool StartLogin = false;
-        public int ProtocolVersion;
+        #endregion
 
         public void Close()
         {
             if (StartLogin)
             {
+                UnCompleted();
+                IO_Completed = null;
                 StartLogin = false;
                 tunnel.Close();
             }
