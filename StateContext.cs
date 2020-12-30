@@ -3,9 +3,12 @@ using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Protocol.ClientBound;
 using MinecraftTunnel.Protocol.ServerBound;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 
 namespace MinecraftTunnel
@@ -56,7 +59,8 @@ namespace MinecraftTunnel
             for (int i = 0; i < m_numConnections; i++) //按照连接数建立读写对象
             {
                 userToken = new AsyncUserToken(m_receiveBufferSize);
-                userToken.Completed(IO_Completed);
+                userToken.SetComplete(IO_Completed);
+                userToken.Completed();
                 m_asyncSocketUserTokenPool.Push(userToken);
             }
         }
@@ -115,9 +119,10 @@ namespace MinecraftTunnel
             AsyncUserToken userToken = m_asyncSocketUserTokenPool.Pop();
 
             userToken.UnCompleted();
-            userToken.Completed(IO_Completed);
+            userToken.SetComplete(IO_Completed);
+            userToken.Completed();
 
-            userToken.Client = e.AcceptSocket;
+            userToken.ServerSocket = e.AcceptSocket;
             // 一旦客户机连接，就准备接收。
             bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(userToken.ReceiveEventArgs);
             if (!willRaiseEvent)
@@ -201,35 +206,49 @@ namespace MinecraftTunnel
                                 Login login = baseProtocol.Resolve<Login>();
                                 // 准备 Tunnel
                                 // Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
-                                Console.WriteLine("Tunnel");
+                                Console.WriteLine("开始登录:" + login.Name);
                                 userToken.Tunnel(this);
-                                userToken.tunnel.Login(login.Name);
-                            }
-                            Handshake handshake = baseProtocol.Resolve<Handshake>();
-                            if (handshake.NextState == NextState.login)
-                            {
-                                userToken.StartLogin = true;
+                                userToken.tunnel.Login(login.Name, userToken.ProtocolVersion);
+
                             }
                             else
                             {
-                                userToken.StartLogin = false;
+                                Handshake handshake = baseProtocol.Resolve<Handshake>();
+                                userToken.ProtocolVersion = handshake.ProtocolVersion;
+                                if (handshake.NextState == NextState.login)
+                                {
+                                    userToken.StartLogin = true;
+                                }
+                                else
+                                {
+                                    userToken.StartLogin = false;
+                                }
                             }
                         }
                         else
                         {
                             // 开始处理本次收到的数据包
                             SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
+                            Response response = new Response("1.15.2", userToken.ProtocolVersion);
+                            response.players.online = 0;
+                            response.players.max = 1;
+                            response.players.sample = new List<SampleItem>();
+
+                            response.description.text = Program.QueryConfig.Motd;
+
+                            response.favicon = "data:image/png;base64,<data>";
+
                             using (Block temp = new Block())
                             {
                                 temp.WriteInt(0);
-                                temp.WriteString("{\"version\":{\"name\":\"1.15.2\",\"protocol\":578},\"players\":{\"max\":100,\"online\":5,\"sample\":[{\"name\":\"thinkofdeath\",\"id\":\"4566e69f-c907-48ee-8d71-d7ba5aa00d20\"}]},\"description\":{\"text\":\"Hello world\"},\"favicon\":\"data:image/png;base64,<data>\"}", true);
+                                temp.WriteString(JsonSerializer.Serialize(response), true);
                                 byte[] buffer = temp.GetBytes();
                                 using (MemoryStream memoryStream = new MemoryStream())
                                 {
                                     memoryStream.WriteInt(buffer.Length);
                                     memoryStream.Write(buffer);
                                     sendPacket.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
-                                    userToken.Client.SendAsync(sendPacket);
+                                    userToken.ServerSocket.SendAsync(sendPacket);
                                 }
                                 Console.Out.WriteLine("New player.");
                             }
@@ -251,14 +270,14 @@ namespace MinecraftTunnel
                                 sendPacket.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
                             }
                             Console.Out.WriteLine("New Ping.");
-                            userToken.Client.SendAsync(sendPacket);
+                            userToken.ServerSocket.SendAsync(sendPacket);
                         }
                     }
                     baseProtocol.Analyze(block);
                 }
 
                 // 准备下次接收数据      
-                bool willRaiseEvent = userToken.Client.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
+                bool willRaiseEvent = userToken.ServerSocket.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
                 if (!willRaiseEvent)
                     ProcessReceive(userToken.ReceiveEventArgs);
             }
@@ -280,7 +299,7 @@ namespace MinecraftTunnel
                 // done echoing data back to the client
                 AsyncUserToken token = (AsyncUserToken)e.UserToken;
                 // read the next block of data send from the client
-                bool willRaiseEvent = token.Client.ReceiveAsync(e);
+                bool willRaiseEvent = token.ServerSocket.ReceiveAsync(e);
                 if (!willRaiseEvent)
                 {
                     ProcessReceive(e);
@@ -298,7 +317,7 @@ namespace MinecraftTunnel
             // close the socket associated with the client
             try
             {
-                token.Client.Shutdown(SocketShutdown.Send);
+                token.ServerSocket.Shutdown(SocketShutdown.Send);
             }
             // throws if client process has already closed
             catch (Exception) { }

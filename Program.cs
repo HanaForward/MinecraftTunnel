@@ -9,6 +9,14 @@ namespace MinecraftTunnel
     public class Program
     {
         private static ushort MaxConnections;
+
+        public static ConnectConfig ServerConfig;
+        public static ConnectConfig NatConfig;
+
+        public static QueryConfig QueryConfig;
+
+
+
         public static IConfigurationRoot Configuration { get; set; }
 
         public static void Main(string[] args)
@@ -17,7 +25,11 @@ namespace MinecraftTunnel
             Configuration = builder.Build();
 
             _ = ushort.TryParse(Configuration["MaxConnections"], out MaxConnections);
-            var ServerConnectConfig = Configuration.GetSection("Server").Get<ConnectConfig>();
+
+            ServerConfig = Configuration.GetSection("Server").Get<ConnectConfig>();
+            NatConfig = Configuration.GetSection("Nat").Get<ConnectConfig>();
+            QueryConfig = Configuration.GetSection("Query").Get<QueryConfig>();
+
             StateContext stateContext = new StateContext(MaxConnections, ushort.MaxValue);
             stateContext.Init();
 
@@ -28,7 +40,7 @@ namespace MinecraftTunnel
             //stateContext.OnClose += Server_OnClose;
 #endif
 
-            IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, 25565);
+            IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, ServerConfig.Port);
             stateContext.Start(serverIP);
 
              Console.ReadKey();

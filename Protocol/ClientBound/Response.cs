@@ -20,11 +20,25 @@ namespace MinecraftTunnel.Protocol.ClientBound
         /// 
         /// </summary>
         public string favicon { get; set; }
+
         public Response() { }
+        public Response(string name, int protocol)
+        {
+            version = new Version(name, protocol);
+            players = new Players();
+            description = new Description();
+        }
     }
 
     public class Version
     {
+        public Version() { }
+        public Version(string name, int protocol)
+        {
+            this.name = name;
+            this.protocol = protocol;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -61,6 +75,9 @@ namespace MinecraftTunnel.Protocol.ClientBound
         /// 
         /// </summary>
         public List<SampleItem> sample { get; set; }
+
+        public Players() { }
+        public Players(List<SampleItem> sample) { this.sample = sample; }
     }
 
     public class Description

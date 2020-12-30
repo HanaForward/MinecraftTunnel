@@ -8,15 +8,17 @@ Server:
 
 #转发的目标
 Nat:
-   IP: 0.0.0.0
-   Port : 0.0.0.0
+   IP: 172.65.234.205
+   Port : 25565
 
-#Motd
-Motd: "这里设置Motd"
+#Query
+Query:
+  ServerAddress : mc.hypixel.net
+  Motd : "§f§k--§e§l ooplay公益 §f§k--§f | §c✈高性价比IP §9§l✔购买地址:quicknat.cn \n §o§e§l☆ Hypixel交流群12345667 ☆ §f| §b§l"
 
 #Ping(Scr,Nat,Null)
 #三种模式：
 #Scr 输出 客户端 到 转发机的延迟
 #Nat 输出 客户端 到 服务器的延迟
 #Null不会暴露延迟
-Ping : "Scr"
+Ping : Scr

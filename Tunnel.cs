@@ -20,27 +20,32 @@ namespace MinecraftTunnel
 
         private void Client_OnReceive(byte[] obj)
         {
-            userToken.Client.Send(obj);
+            userToken.ServerSocket.Send(obj);
 #if DEBUG
             Console.WriteLine("Client_OnReceive : " + obj.Length);
 #endif
         }
+
         public void Bind(StateContext stateContext, AsyncUserToken asyncUserToken)
         {
             this.stateContext = stateContext;
             this.userToken = asyncUserToken;
         }
 
-        public void Login(string Name)
+        public void Login(string Name, int ProtocolVersion)
         {
             BaseProtocol baseProtocol = new BaseProtocol();
             Handshake handshake = new Handshake();
-            handshake.ProtocolVersion = 578;
-            handshake.ServerAddress = "mc.hypixel.net";
-            handshake.ServerPort = 25565;
+            handshake.ProtocolVersion = ProtocolVersion;
+
+            handshake.ServerAddress = Program.QueryConfig.ServerAddress;
+            handshake.ServerPort = Program.NatConfig.Port;
+
             handshake.NextState = NextState.login;
+
             byte[] buffer = baseProtocol.Pack(handshake);
             client.Send(buffer, 0, buffer.Length);
+
             Login login = new Login();
             login.Name = Name;
             buffer = baseProtocol.Pack(login);
@@ -59,6 +64,7 @@ namespace MinecraftTunnel
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
         }
+
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
             AsyncUserToken userToken = (AsyncUserToken)e.UserToken;
@@ -69,16 +75,18 @@ namespace MinecraftTunnel
             {
                 client.Send(Buffer, offset, count);
                 // 准备下次接收数据      
-                bool willRaiseEvent = userToken.Client.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
+                bool willRaiseEvent = userToken.ServerSocket.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
                 if (!willRaiseEvent)
                     ProcessReceive(userToken.ReceiveEventArgs);
             }
-            else {
+            else
+            {
                 stateContext.CloseClientSocket(e);
+                Close();
             }
         }
 
-        public void Clost()
+        public void Close()
         {
             userToken = null;
             client.Close();

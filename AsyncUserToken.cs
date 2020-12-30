@@ -23,34 +23,53 @@ namespace MinecraftTunnel
         {
             ConnectDateTime = DateTime.Now;
             UnCompleted();
-            tunnel = new Tunnel("172.65.234.205", 25565);
+            SetComplete(null);
+
+            tunnel = new Tunnel(Program.NatConfig.IP, Program.NatConfig.Port);
             tunnel.Bind(stateContext, this);
-            Completed(tunnel.IO_Completed);
+
+            SetComplete(tunnel.IO_Completed);
+            Completed();
         }
-        public void Completed(Action<object, SocketAsyncEventArgs> IO_Completed)
+
+        public void SetComplete(Action<object, SocketAsyncEventArgs> IO_Completed)
         {
             this.IO_Completed = IO_Completed;
-            ReceiveEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-            SendEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+        }
+        public void Completed()
+        {
+            if (IO_Completed != null)
+            {
+                ReceiveEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                SendEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+            }
         }
         public void UnCompleted()
         {
-            ReceiveEventArgs.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-            SendEventArgs.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+            if (IO_Completed != null)
+            {
+                ReceiveEventArgs.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                SendEventArgs.Completed -= new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+            }
         }
 
         public SocketAsyncEventArgs ReceiveEventArgs;
         public SocketAsyncEventArgs SendEventArgs;
 
-        public Socket Client;
-        internal bool StartLogin;
+        public Socket ServerSocket; 
+
+        public bool StartLogin = false;
+        public int ProtocolVersion;
 
         public void Close()
         {
-            Client.Close();
-            if (tunnel != null)
-                tunnel.Clost();
-            tunnel = null;
+            if (StartLogin)
+            {
+                StartLogin = false;
+                tunnel.Close();
+            }
+            ProtocolVersion = 0;
+            ServerSocket.Close();
         }
     }
 }
