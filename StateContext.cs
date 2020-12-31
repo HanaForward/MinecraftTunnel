@@ -58,7 +58,6 @@ namespace MinecraftTunnel
                 TokenPool.Push(userToken);
             }
         }
-
         /// <summary>
         /// 启动tcp服务侦听
         /// </summary>       
@@ -70,7 +69,6 @@ namespace MinecraftTunnel
             ServerSocket.Listen(100);
             StartAccept(null);
         }
-
         /// <summary>
         /// 开始接受客户端的连接请求的操作。
         /// </summary>
@@ -94,7 +92,6 @@ namespace MinecraftTunnel
                 ProcessAccept(acceptEventArg);
             }
         }
-
         /// <summary>
         /// 当异步连接完成时调用此方法
         /// </summary>
@@ -122,7 +119,6 @@ namespace MinecraftTunnel
             // 接受第二连接的请求
             StartAccept(e);
         }
-
         // This method is the callback method associated with Socket.AcceptAsync
         // operations and is invoked when an accept operation is complete
         void AcceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
@@ -146,7 +142,6 @@ namespace MinecraftTunnel
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
         }
-
         /// <summary>
         /// 接受处理回调
         /// </summary>
@@ -266,7 +261,6 @@ namespace MinecraftTunnel
                 CloseClientSocket(e);
             }
         }
-
         // This method is invoked when an asynchronous send operation completes.
         // The method issues another receive on the socket to read any additional
         // data sent from the client
@@ -290,7 +284,6 @@ namespace MinecraftTunnel
                 CloseClientSocket(e);
             }
         }
-
         public void CloseClientSocket(SocketAsyncEventArgs e)
         {
             AsyncUserToken token = e.UserToken as AsyncUserToken;

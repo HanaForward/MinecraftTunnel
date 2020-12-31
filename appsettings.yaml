@@ -1,6 +1,12 @@
 ﻿# 最大连接数,超过连接数后的连接不在被处理
 MaxConnections : 100
 
+#数据储存数据库
+DataBase:
+   ConfigId : "1"
+   DbType : "MySql"
+   ConnectionString : "SERVER=127.0.0.1;DATABASE=MinecraftTunnel;UID=root;PASSWORD='';PORT=3306;"
+
 #服务器监听的端口
 Server:
    IP : 0.0.0.0

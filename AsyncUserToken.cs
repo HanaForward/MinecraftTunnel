@@ -16,12 +16,11 @@ namespace MinecraftTunnel
         public bool StartLogin = false;
         public int ProtocolVersion;
 
+        private int TotalBytesRead, TotalBytesSend;
         public AsyncUserToken(int ReceiveBufferSize)
         {
             this.BufferSize = ReceiveBufferSize;
-
             ReceiveBuffer = new byte[BufferSize];
-
             ReceiveEventArgs = new SocketAsyncEventArgs();
             ReceiveEventArgs.UserToken = this;
             ReceiveEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
