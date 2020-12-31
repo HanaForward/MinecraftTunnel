@@ -12,10 +12,7 @@ namespace MinecraftTunnel
 
         public static ConnectConfig ServerConfig;
         public static ConnectConfig NatConfig;
-
         public static QueryConfig QueryConfig;
-
-
 
         public static IConfigurationRoot Configuration { get; set; }
 

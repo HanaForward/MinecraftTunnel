@@ -12,9 +12,9 @@ namespace MinecraftTunnel
         private StateContext stateContext;
         private AsyncUserToken userToken;
 
-        public Tunnel(string IP, int Port)
+        public Tunnel(string IP, int Port, int BufferSize)
         {
-            client = new TcpPushClient(1024 * 1024);
+            client = new TcpPushClient(BufferSize);
             client.OnReceive += Client_OnReceive;
             client.OnClose += Client_OnClose;
             client.Connect(IP, Port);

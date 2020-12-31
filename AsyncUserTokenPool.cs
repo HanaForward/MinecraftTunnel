@@ -6,12 +6,10 @@ namespace MinecraftTunnel
     public class AsyncUserTokenPool
     {
         private Stack<AsyncUserToken> m_pool;
-
         public AsyncUserTokenPool(int capacity)
         {
             m_pool = new Stack<AsyncUserToken>(capacity);
         }
-
         public void Push(AsyncUserToken item)
         {
             if (item == null)
@@ -23,7 +21,6 @@ namespace MinecraftTunnel
                 m_pool.Push(item);
             }
         }
-
         public AsyncUserToken Pop()
         {
             lock (m_pool)
@@ -31,7 +28,6 @@ namespace MinecraftTunnel
                 return m_pool.Pop();
             }
         }
-
         public int Count
         {
             get { return m_pool.Count; }

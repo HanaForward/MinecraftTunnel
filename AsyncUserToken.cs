@@ -7,9 +7,9 @@ namespace MinecraftTunnel
     {
         public Tunnel tunnel;
         protected byte[] ReceiveBuffer;
+        private int BufferSize;
         protected DateTime ConnectDateTime;// 连接时间
         public Action<object, SocketAsyncEventArgs> IO_Completed;
-
         public SocketAsyncEventArgs ReceiveEventArgs;
         public SocketAsyncEventArgs SendEventArgs;
         public Socket ServerSocket;
@@ -18,7 +18,9 @@ namespace MinecraftTunnel
 
         public AsyncUserToken(int ReceiveBufferSize)
         {
-            ReceiveBuffer = new byte[ReceiveBufferSize];
+            this.BufferSize = ReceiveBufferSize;
+
+            ReceiveBuffer = new byte[BufferSize];
 
             ReceiveEventArgs = new SocketAsyncEventArgs();
             ReceiveEventArgs.UserToken = this;
@@ -30,7 +32,7 @@ namespace MinecraftTunnel
         {
             UnCompleted();
             ConnectDateTime = DateTime.Now;
-            tunnel = new Tunnel(Program.NatConfig.IP, Program.NatConfig.Port);
+            tunnel = new Tunnel(Program.NatConfig.IP, Program.NatConfig.Port, BufferSize);
             tunnel.Bind(stateContext, this);
             SetComplete(tunnel.IO_Completed);
             Completed();
