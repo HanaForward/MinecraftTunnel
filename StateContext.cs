@@ -21,10 +21,13 @@ namespace MinecraftTunnel
         public event Action OnClose;                                        // 连接关闭事件
         #endregion
 
+        public uint TotalBytesRead, TotalBytesSend;
+        public Dictionary<string, AsyncUserToken> Online = new Dictionary<string, AsyncUserToken>();
+
         private int MaxConnections, BufferSize;
         private Socket ServerSocket;
         private AsyncUserTokenPool TokenPool;
-        private int TotalBytesRead, TotalBytesSend;
+
         private int ConnectedSockets;
         Semaphore semaphore;
 
@@ -100,9 +103,6 @@ namespace MinecraftTunnel
         {
             // 原子操作,增加一个客户端数量
             Interlocked.Increment(ref ConnectedSockets);
-#if DEBUG
-            Console.WriteLine("客户端进入!当前有 {0} 名客户端", ConnectedSockets);
-#endif
             // 从接受端重用池获取一个新的SocketAsyncEventArgs对象
             AsyncUserToken userToken = TokenPool.Pop();
             userToken.ServerSocket = e.AcceptSocket;
@@ -157,100 +157,112 @@ namespace MinecraftTunnel
 
             if (count > 0 && userToken.ReceiveEventArgs.SocketError == SocketError.Success)
             {
-                Interlocked.Add(ref TotalBytesRead, e.BytesTransferred);
-                Block block = new Block(Buffer);
-                BaseProtocol baseProtocol = new BaseProtocol();
-                baseProtocol.Analyze(block);
-                while (offset < count)
+                Interlocked.Add(ref TotalBytesRead, (uint)e.BytesTransferred);
+                try
                 {
-                    offset++;
-                    // 需要处理分包
-                    byte[] packet = new byte[baseProtocol.PacketSize];
-                    Array.Copy(Buffer, offset, packet, 0, baseProtocol.PacketSize);
-                    offset += baseProtocol.PacketSize;
-
-                    // 回调               
-                    OnReceive?.Invoke(userToken, packet, offset, baseProtocol.PacketSize);
-
-                    if (baseProtocol.PacketId == 0)
+                    Block block = new Block(Buffer);
+                    BaseProtocol baseProtocol = new BaseProtocol();
+                    baseProtocol.Analyze(block);
+                    while (offset < count)
                     {
-                        if (baseProtocol.PacketSize > 3)
-                        {
-                            if (userToken.StartLogin)
-                            {
-                                Login login = baseProtocol.Resolve<Login>();
-                                // 准备 Tunnel
-                                // Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
-                                Console.WriteLine("开始登录:" + login.Name);
-                                userToken.Tunnel(this);
-                                userToken.tunnel.Login(login.Name, userToken.ProtocolVersion);
+                        offset++;
+                        // 需要处理分包
+                        byte[] packet = new byte[baseProtocol.PacketSize];
+                        Array.Copy(Buffer, offset, packet, 0, baseProtocol.PacketSize);
+                        offset += baseProtocol.PacketSize;
 
-                            }
-                            else
+                        // 回调               
+                        OnReceive?.Invoke(userToken, packet, offset, baseProtocol.PacketSize);
+
+                        if (baseProtocol.PacketId == 0)
+                        {
+                            if (baseProtocol.PacketSize > 3)
                             {
-                                Handshake handshake = baseProtocol.Resolve<Handshake>();
-                                userToken.ProtocolVersion = handshake.ProtocolVersion;
-                                if (handshake.NextState == NextState.login)
+                                if (userToken.StartLogin)
                                 {
-                                    userToken.StartLogin = true;
+                                    Login login = baseProtocol.Resolve<Login>();
+                                    // 准备 Tunnel
+                                    // Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
+                                    // Console.WriteLine("开始登录:" + login.Name);
+                                    userToken.Tunnel(this);
+
+                                    userToken.PlayerName = login.Name;
+                                    userToken.tunnel.Login(login.Name, userToken.ProtocolVersion);
+
+                                    Online.Add(userToken.PlayerName, userToken);
                                 }
                                 else
                                 {
-                                    userToken.StartLogin = false;
+                                    Handshake handshake = baseProtocol.Resolve<Handshake>();
+                                    userToken.ProtocolVersion = handshake.ProtocolVersion;
+                                    if (handshake.NextState == NextState.login)
+                                    {
+                                        userToken.StartLogin = true;
+                                    }
+                                    else
+                                    {
+                                        userToken.StartLogin = false;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // 开始处理本次收到的数据包
+                                SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
+                                Response response = new Response("1.15.2", userToken.ProtocolVersion);
+                                response.players.online = 0;
+                                response.players.max = 1;
+                                response.players.sample = new List<SampleItem>();
+
+                                response.description.text = Program.QueryConfig.Motd;
+
+                                response.favicon = "data:image/png;base64,<data>";
+
+                                using (Block temp = new Block())
+                                {
+                                    temp.WriteInt(0);
+                                    temp.WriteString(JsonSerializer.Serialize(response), true);
+                                    byte[] buffer = temp.GetBytes();
+                                    using (MemoryStream memoryStream = new MemoryStream())
+                                    {
+                                        memoryStream.WriteInt(buffer.Length);
+                                        memoryStream.Write(buffer);
+                                        sendPacket.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
+                                        userToken.ServerSocket.SendAsync(sendPacket);
+                                    }
+                                    // Console.Out.WriteLine("New player.");
                                 }
                             }
                         }
-                        else
+                        else if (baseProtocol.PacketId == 1)
                         {
-                            // 开始处理本次收到的数据包
                             SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
-                            Response response = new Response("1.15.2", userToken.ProtocolVersion);
-                            response.players.online = 0;
-                            response.players.max = 1;
-                            response.players.sample = new List<SampleItem>();
-
-                            response.description.text = Program.QueryConfig.Motd;
-
-                            response.favicon = "data:image/png;base64,<data>";
-
+                            Pong pong = baseProtocol.Resolve<Pong>();
                             using (Block temp = new Block())
                             {
-                                temp.WriteInt(0);
-                                temp.WriteString(JsonSerializer.Serialize(response), true);
+                                temp.WriteInt(1);
+                                temp.WriteLong(pong.Payload);
                                 byte[] buffer = temp.GetBytes();
                                 using (MemoryStream memoryStream = new MemoryStream())
                                 {
                                     memoryStream.WriteInt(buffer.Length);
                                     memoryStream.Write(buffer);
                                     sendPacket.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
-                                    userToken.ServerSocket.SendAsync(sendPacket);
                                 }
-                                Console.Out.WriteLine("New player.");
+                                // Console.Out.WriteLine("New Ping.");
+                                userToken.ServerSocket.SendAsync(sendPacket);
                             }
                         }
+                        baseProtocol.Analyze(block);
                     }
-                    else if (baseProtocol.PacketId == 1)
-                    {
-                        SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
-                        Pong pong = baseProtocol.Resolve<Pong>();
-                        using (Block temp = new Block())
-                        {
-                            temp.WriteInt(1);
-                            temp.WriteLong(pong.Payload);
-                            byte[] buffer = temp.GetBytes();
-                            using (MemoryStream memoryStream = new MemoryStream())
-                            {
-                                memoryStream.WriteInt(buffer.Length);
-                                memoryStream.Write(buffer);
-                                sendPacket.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
-                            }
-                            Console.Out.WriteLine("New Ping.");
-                            userToken.ServerSocket.SendAsync(sendPacket);
-                        }
-                    }
-                    baseProtocol.Analyze(block);
-                }
 
+
+                }
+                catch (Exception ex)
+                {
+
+
+                }
                 // 准备下次接收数据      
                 bool willRaiseEvent = userToken.ServerSocket.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
                 if (!willRaiseEvent)
@@ -293,20 +305,20 @@ namespace MinecraftTunnel
             }
             catch (Exception) { }
             token.Close();
-
             Interlocked.Decrement(ref ConnectedSockets);
-
             if (null == token.IO_Completed)
             {
                 token.SetComplete(IO_Completed);
                 token.Completed();
             }
-
+            if (token.PlayerName != null)
+            {
+                Online.Remove(token.PlayerName);
+                token.PlayerName = null;
+            }
+                
             TokenPool.Push(token);
             semaphore.Release();
-#if DEBUG
-            Console.WriteLine("客户端连接断开!当前还有 {0} 名客户端", ConnectedSockets);
-#endif
         }
     }
 }

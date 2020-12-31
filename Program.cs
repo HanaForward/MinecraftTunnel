@@ -3,6 +3,7 @@ using MinecraftTunnel.Model;
 using System;
 using System.IO;
 using System.Net;
+using System.Threading;
 
 namespace MinecraftTunnel
 {
@@ -14,6 +15,8 @@ namespace MinecraftTunnel
         public static ConnectConfig NatConfig;
         public static QueryConfig QueryConfig;
 
+        private const char _block = '■';
+
         public static IConfigurationRoot Configuration { get; set; }
 
         public static void Main(string[] args)
@@ -22,46 +25,71 @@ namespace MinecraftTunnel
             Configuration = builder.Build();
 
             _ = ushort.TryParse(Configuration["MaxConnections"], out MaxConnections);
-
             ServerConfig = Configuration.GetSection("Server").Get<ConnectConfig>();
             NatConfig = Configuration.GetSection("Nat").Get<ConnectConfig>();
             QueryConfig = Configuration.GetSection("Query").Get<QueryConfig>();
 
-            StateContext stateContext = new StateContext(MaxConnections, 1024 * 1024);
+            StateContext stateContext = new StateContext(MaxConnections, ushort.MaxValue);
             stateContext.Init();
-
-#if DEBUG
-            //stateContext.OnAccept += Server_OnAccept;
-            stateContext.OnReceive += Server_OnReceive;
-            stateContext.OnSend += Server_OnSend;
-            //stateContext.OnClose += Server_OnClose;
-#endif
-
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, ServerConfig.Port);
             stateContext.Start(serverIP);
 
-            Console.ReadKey();
+            int CursorTop, OnPlayer = 0;
+
+            Console.Clear();
+            Console.WriteLine("##########实时统计##########");
+            Console.SetCursorPosition(0, 3);//将光标至于当前行的开始位置
+            Console.WriteLine("##########在线玩家##########");
+            Console.SetCursorPosition(0, 1);//将光标至于当前行的开始位置
+
+            while (true)
+            {
+                uint TotalBytesSend = Interlocked.Exchange(ref stateContext.TotalBytesSend, 0);
+                uint TotalBytesRead = Interlocked.Exchange(ref stateContext.TotalBytesRead, 0);
+
+                int Top = Console.CursorTop;//记录当前光标位置
+
+                ClearCurrentConsoleLine();
+                Console.WriteLine("当前上行速率:" + TotalBytesSend);
+                ClearCurrentConsoleLine();
+                Console.WriteLine("当前下行速率:" + TotalBytesRead);
+                Console.SetCursorPosition(0, 4);
+
+                int temp = stateContext.Online.Count;
+                if (OnPlayer > temp)
+                {
+                    for (int i = 0; i < OnPlayer - temp; i++)
+                    {
+                        ClearCurrentConsoleLine(4 + temp + i);
+                    }
+                }
+
+                OnPlayer = temp;
+                // 开始打印玩家列表
+                foreach (var token in stateContext.Online)
+                {
+                    CursorTop = Console.CursorTop;
+                    Console.Write(new string(' ', Console.WindowWidth));//用空格将当前行填满，相当于清除当前行
+                    Console.SetCursorPosition(0, Console.CursorTop);//将光标至于当前行的开始位置
+                    Console.WriteLine($"玩家ID : {token.Key} 登录时间:{token.Value.ConnectDateTime} 到期时间:{token.Value.EndTime}");
+                }
+
+                Console.SetCursorPosition(0, Top);//将光标恢复至开始时的位置
+                Thread.Sleep(1000);
+            }
         }
 
-        private static void Server_OnAccept()
+        public static void ClearCurrentConsoleLine(int Cursor = 0)
         {
-            Console.WriteLine($"Push已连接");
+            int currentLineCursor = Console.CursorTop;
+            if (Cursor > 0)
+            {
+                Console.SetCursorPosition(0, Cursor);
+            }
+            Console.SetCursorPosition(0, Console.CursorTop);
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.SetCursorPosition(0, currentLineCursor);
         }
 
-        private static void Server_OnClose()
-        {
-            Console.WriteLine($"Push断开");
-        }
-
-        private static void Server_OnSend(int arg1, int arg2)
-        {
-            Console.WriteLine($"Push已发送:{arg1} 长度:{arg2}");
-        }
-
-        private static void Server_OnReceive(AsyncUserToken asyncUserToken, byte[] buffer, int arg, int agr1)
-        {
-            Console.WriteLine(BitConverter.ToString(buffer));
-            Console.WriteLine($"Push已接收:{arg} 长度:{agr1}");
-        }
     }
 }

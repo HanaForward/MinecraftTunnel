@@ -24,18 +24,17 @@ namespace MinecraftTunnel
         {
             if (userToken != null)
                 userToken.ServerSocket.Close();
-#if DEBUG
-            Console.WriteLine("Client_OnClose");
-#endif
         }
 
         private void Client_OnReceive(byte[] obj)
         {
+            if (userToken == null)
+            {
+                Close();
+                return;
+            }
             userToken.SendEventArgs.SetBuffer(obj);
             userToken.ServerSocket.SendAsync(userToken.SendEventArgs);
-#if DEBUG
-            Console.WriteLine("Client_OnReceive : " + obj.Length);
-#endif
         }
 
         public void Bind(StateContext stateContext, AsyncUserToken asyncUserToken)
@@ -62,7 +61,7 @@ namespace MinecraftTunnel
             login.Name = Name;
             buffer = baseProtocol.Pack(login);
             client.Send(buffer, 0, buffer.Length);
-            Console.WriteLine($"Login完毕");
+            // Console.WriteLine($"Login完毕");
         }
 
         public void IO_Completed(object arg1, SocketAsyncEventArgs e)
@@ -88,11 +87,8 @@ namespace MinecraftTunnel
             {
                 byte[] temp = new byte[count];
                 Array.Copy(Buffer, offset, temp, 0, count);
-
+                //userToken.Send();
                 client.Send(temp, 0, count);
-#if DEBUG
-                Console.WriteLine("Client_OnSend : " + (count - offset));
-#endif
                 // 准备下次接收数据      
                 bool willRaiseEvent = userToken.ServerSocket.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
                 if (!willRaiseEvent)
