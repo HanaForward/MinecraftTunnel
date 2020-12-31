@@ -216,7 +216,7 @@ namespace MinecraftTunnel
 
                                 response.description.text = Program.QueryConfig.Motd;
 
-                                response.favicon = "data:image/png;base64,<data>";
+                                response.favicon = "";
 
                                 using (Block temp = new Block())
                                 {
