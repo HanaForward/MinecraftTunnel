@@ -70,6 +70,7 @@ namespace MinecraftTunnel
             ServerSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             ServerSocket.Bind(localEndPoint);
             ServerSocket.Listen(100);
+            ServerSocket.NoDelay = true;
             StartAccept(null);
         }
         /// <summary>
@@ -181,15 +182,14 @@ namespace MinecraftTunnel
                                 if (userToken.StartLogin)
                                 {
                                     Login login = baseProtocol.Resolve<Login>();
-                                    // 准备 Tunnel
-                                    // Tunnel tunnel = new Tunnel("172.65.234.205", 25565);
-                                    // Console.WriteLine("开始登录:" + login.Name);
                                     userToken.Tunnel(this);
 
                                     userToken.PlayerName = login.Name;
                                     userToken.tunnel.Login(login.Name, userToken.ProtocolVersion);
 
                                     Online.Add(userToken.PlayerName, userToken);
+
+                                    return;
                                 }
                                 else
                                 {
@@ -316,7 +316,7 @@ namespace MinecraftTunnel
                 Online.Remove(token.PlayerName);
                 token.PlayerName = null;
             }
-                
+
             TokenPool.Push(token);
             semaphore.Release();
         }

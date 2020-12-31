@@ -1,6 +1,5 @@
 ﻿using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Protocol.ServerBound;
-using socket.core.Client;
 using System;
 using System.Net.Sockets;
 
@@ -8,13 +7,13 @@ namespace MinecraftTunnel
 {
     public class Tunnel
     {
-        private readonly TcpPushClient client;
+        private readonly TcpClients client;
         private StateContext stateContext;
         private AsyncUserToken userToken;
 
         public Tunnel(string IP, int Port, int BufferSize)
         {
-            client = new TcpPushClient(BufferSize);
+            client = new TcpClients(BufferSize);
             client.OnReceive += Client_OnReceive;
             client.OnClose += Client_OnClose;
             client.Connect(IP, Port);
