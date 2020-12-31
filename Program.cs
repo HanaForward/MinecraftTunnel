@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using log4net;
+using Microsoft.Extensions.Configuration;
 using MinecraftTunnel.Model;
 using System;
 using System.IO;
 using System.Net;
 using System.Threading;
 
+
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]
 namespace MinecraftTunnel
 {
     public class Program
@@ -15,7 +18,7 @@ namespace MinecraftTunnel
         public static ConnectConfig NatConfig;
         public static QueryConfig QueryConfig;
 
-        private const char _block = '■';
+        public static readonly ILog log = LogManager.GetLogger("MinecraftTunnel");
 
         public static IConfigurationRoot Configuration { get; set; }
 
@@ -90,6 +93,5 @@ namespace MinecraftTunnel
             Console.Write(new string(' ', Console.WindowWidth));
             Console.SetCursorPosition(0, currentLineCursor);
         }
-
     }
 }
