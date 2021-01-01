@@ -186,9 +186,9 @@ namespace MinecraftTunnel
 
                                     userToken.PlayerName = login.Name;
                                     userToken.tunnel.Login(login.Name, userToken.ProtocolVersion);
-
                                     Online.Add(userToken.PlayerName, userToken);
 
+                                    userToken.tunnel.ProcessReceive(e);
                                     return;
                                 }
                                 else

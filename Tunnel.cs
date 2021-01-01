@@ -80,7 +80,7 @@ namespace MinecraftTunnel
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
         }
-        private void ProcessReceive(SocketAsyncEventArgs e)
+        public void ProcessReceive(SocketAsyncEventArgs e)
         {
             try
             {
