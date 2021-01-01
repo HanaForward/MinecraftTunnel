@@ -60,6 +60,9 @@ namespace MinecraftTunnel
         /// 锁
         /// </summary>
         private Mutex mutex = new Mutex();
+
+        public bool Flag = true;
+
         /// <summary>
         /// 是否连接服务器
         /// </summary>
@@ -148,7 +151,7 @@ namespace MinecraftTunnel
                     StartSend();
                 }));
                 thread.IsBackground = true;
-                thread.Priority = ThreadPriority.Highest;
+                thread.Priority = ThreadPriority.Lowest;
                 thread.Start();
             }
             else
@@ -245,6 +248,10 @@ namespace MinecraftTunnel
                 else
                 {
                     Thread.Sleep(100);
+                    if (!Flag && sendQueue.Count <= 0)
+                    {
+                        break;
+                    }
                 }
             }
         }
