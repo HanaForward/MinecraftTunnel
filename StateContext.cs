@@ -161,19 +161,16 @@ namespace MinecraftTunnel
                 Interlocked.Add(ref TotalBytesRead, (uint)e.BytesTransferred);
                 try
                 {
-                    Block block = new Block(Buffer);
+                    Block block = new Block(Buffer, offset);
                     BaseProtocol baseProtocol = new BaseProtocol();
-                    baseProtocol.Analyze(block);
-                    while (offset < count)
+                    do
                     {
-                        offset++;
+                        baseProtocol.Analyze(block);
                         // 需要处理分包
-                        byte[] packet = new byte[baseProtocol.PacketSize];
-                        Array.Copy(Buffer, offset, packet, 0, baseProtocol.PacketSize);
-                        offset += baseProtocol.PacketSize;
-
+                        //byte[] packet = new byte[baseProtocol.PacketSize];
+                        //Array.Copy(Buffer, offset, packet, 0, baseProtocol.PacketSize);
                         // 回调               
-                        OnReceive?.Invoke(userToken, packet, offset, baseProtocol.PacketSize);
+                        // OnReceive?.Invoke(userToken, packet, offset, baseProtocol.PacketSize);
 
                         if (baseProtocol.PacketId == 0)
                         {
@@ -187,9 +184,6 @@ namespace MinecraftTunnel
                                     userToken.PlayerName = login.Name;
                                     userToken.tunnel.Login(login.Name, userToken.ProtocolVersion);
                                     Online.Add(userToken.PlayerName, userToken);
-
-                                    userToken.tunnel.ProcessReceive(e);
-                                    return;
                                 }
                                 else
                                 {
@@ -253,11 +247,11 @@ namespace MinecraftTunnel
                                 userToken.ServerSocket.SendAsync(sendPacket);
                             }
                         }
-                        baseProtocol.Analyze(block);
-                    }
+   
 
-
+                    } while (baseProtocol.block.step < count);
                 }
+
                 catch (Exception ex)
                 {
 

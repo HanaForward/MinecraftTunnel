@@ -6,7 +6,7 @@ namespace MinecraftTunnel.Protocol
 {
     public class BaseProtocol
     {
-        private Block block;
+        public Block block;
 
         public int PacketSize;
         public int PacketId;
