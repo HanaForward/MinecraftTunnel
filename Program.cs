@@ -39,14 +39,15 @@ namespace MinecraftTunnel
 
             int CursorTop, OnPlayer = 0;
 
-            Console.Clear();
-            Console.WriteLine("##########实时统计##########");
-            Console.SetCursorPosition(0, 3);//将光标至于当前行的开始位置
-            Console.WriteLine("##########在线玩家##########");
-            Console.SetCursorPosition(0, 1);//将光标至于当前行的开始位置
-
+  
             while (true)
             {
+                Console.Clear();
+                Console.WriteLine("##########实时统计##########");
+                Console.SetCursorPosition(0, 3);//将光标至于当前行的开始位置
+                Console.WriteLine("##########在线玩家##########");
+                Console.SetCursorPosition(0, 1);//将光标至于当前行的开始位置
+
                 uint TotalBytesSend = Interlocked.Exchange(ref stateContext.TotalBytesSend, 0);
                 uint TotalBytesRead = Interlocked.Exchange(ref stateContext.TotalBytesRead, 0);
 
@@ -77,7 +78,7 @@ namespace MinecraftTunnel
                     Console.WriteLine($"玩家ID : {token.Key} 登录时间:{token.Value.ConnectDateTime} 到期时间:{token.Value.EndTime}");
                 }
 
-                Console.SetCursorPosition(0, Top);//将光标恢复至开始时的位置
+                Console.SetCursorPosition(0, 5);//将光标恢复至开始时的位置
                 Thread.Sleep(1000);
             }
         }
