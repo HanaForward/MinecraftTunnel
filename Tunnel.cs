@@ -8,13 +8,13 @@ namespace MinecraftTunnel
 {
     public class Tunnel
     {
-        private readonly TcpPushClient client;
+        private readonly TcpClients client;
         private StateContext stateContext;
         private AsyncUserToken userToken;
 
         public Tunnel(string IP, int Port, int BufferSize)
         {
-            client = new TcpPushClient(BufferSize);
+            client = new TcpClients(BufferSize);
             client.OnReceive += Client_OnReceive;
             client.OnClose += Client_OnClose;
             client.Connect(IP, Port);
@@ -95,7 +95,7 @@ namespace MinecraftTunnel
                     byte[] temp = new byte[count];
                     Array.Copy(Buffer, offset, temp, 0, count);
                     //userToken.Send();
-                    client.Send(temp, 0, count);
+                    client.socket.Send(temp);
                     // 准备下次接收数据      
                     bool willRaiseEvent = userToken.ServerSocket.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
                     if (!willRaiseEvent)
