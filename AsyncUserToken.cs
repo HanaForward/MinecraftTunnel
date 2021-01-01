@@ -1,4 +1,7 @@
-﻿using System;
+﻿using MinecraftTunnel.Extensions;
+using MinecraftTunnel.Protocol;
+using System;
+using System.IO;
 using System.Net.Sockets;
 
 namespace MinecraftTunnel
@@ -80,7 +83,8 @@ namespace MinecraftTunnel
                 UnCompleted();
                 IO_Completed = null;
                 StartLogin = false;
-                tunnel.Close();
+                if (tunnel != null)
+                    tunnel.Close();
             }
             IsForge = false;
             ProtocolVersion = 0;
@@ -96,5 +100,41 @@ namespace MinecraftTunnel
         {
             return HashCode.Combine(PlayerName);
         }
+
+
+        public void Kick(Chat chat)
+        {
+            SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                byte[] buffer = chat.Pack();
+                memoryStream.WriteInt(buffer.Length);
+                memoryStream.Write(buffer);
+                sendPacket.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
+                ServerSocket.SendAsync(sendPacket);
+            }
+
+        }
+        public void Kick(string message)
+        {
+            SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    memoryStream.WriteInt(0);
+                    memoryStream.WriteString(message, true);
+
+                    stream.WriteInt((int)memoryStream.Position);
+                    stream.Write(memoryStream.GetBuffer());
+
+                    sendPacket.SetBuffer(stream.GetBuffer(), 0, (int)stream.Position);
+                    ServerSocket.SendAsync(sendPacket);
+                }
+            }
+
+
+        }
+
     }
 }

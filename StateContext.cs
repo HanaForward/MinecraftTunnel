@@ -1,4 +1,5 @@
 ﻿using MinecraftTunnel.Extensions;
+using MinecraftTunnel.Model;
 using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Protocol.ClientBound;
 using MinecraftTunnel.Protocol.ServerBound;
@@ -30,6 +31,8 @@ namespace MinecraftTunnel
 
         private int ConnectedSockets;
         Semaphore semaphore;
+
+        private DatabaseManager databaseManager = new DatabaseManager();
 
         // Create an uninitialized server instance.
         // To start the server listening for connection requests
@@ -176,11 +179,26 @@ namespace MinecraftTunnel
                                 if (userToken.StartLogin)
                                 {
                                     Login login = baseProtocol.Resolve<Login>();
-                                    userToken.Tunnel(this);
-
-                                    userToken.PlayerName = login.Name;
-                                    userToken.tunnel.Login(login.Name, userToken.ProtocolVersion, userToken.IsForge);
-                                    Online.Add(userToken.PlayerName, userToken);
+                                    UserModel userModel = databaseManager.FindPlayer(login.Name);
+                                    if (userModel == null)
+                                    {
+                                        userToken.Kick(Program.NoFind);
+                                    }
+                                    else
+                                    {
+                                        if (userModel.End_at < DateTime.Now)
+                                        {
+                                            userToken.Kick(Program.IsEnd);
+                                        }
+                                        else
+                                        {
+                                            userToken.Tunnel(this);
+                                            userToken.PlayerName = login.Name;
+                                            userToken.EndTime = userModel.End_at;
+                                            userToken.tunnel.Login(login.Name, userToken.ProtocolVersion, userToken.IsForge);
+                                            Online.Add(userToken.PlayerName, userToken);
+                                        }
+                                    }
                                 }
                                 else
                                 {

@@ -28,3 +28,8 @@ Query:
 #Nat 输出 客户端 到 服务器的延迟
 #Null不会暴露延迟
 Ping : Scr
+
+
+Message:
+  NotFind : "{\"text\":\"你还没有购买加速IP,请访问:quicknat.cn购买\",\"color\":\"#ff5555\"}"
+  IsEnd : "{\"text\":\"您的加速IP,请访问:quicknat.cn重新购买\",\"color\":\"#ff5555\"}"

@@ -4,6 +4,7 @@ using MinecraftTunnel.Model;
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading;
 
 
@@ -17,6 +18,10 @@ namespace MinecraftTunnel
         public static ConnectConfig ServerConfig;
         public static ConnectConfig NatConfig;
         public static QueryConfig QueryConfig;
+
+
+        public static string NoFind;
+        public static string IsEnd;
 
         public static string ConnectionString;
 
@@ -37,12 +42,18 @@ namespace MinecraftTunnel
 
             ConnectionString = Configuration["DataBase:ConnectionString"];
 
+            NoFind = Configuration["Message:NotFind"];
+            IsEnd = Configuration["Message:IsEnd"];
+
             StateContext stateContext = new StateContext(MaxConnections, ushort.MaxValue);
             stateContext.Init();
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, ServerConfig.Port);
             stateContext.Start(serverIP);
 
             int CursorTop, OnPlayer = 0;
+
+
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
 
             while (true)
