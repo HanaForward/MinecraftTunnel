@@ -1,6 +1,5 @@
 ﻿using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Protocol.ServerBound;
-using socket.core.Client;
 using System;
 using System.Net.Sockets;
 
@@ -11,7 +10,6 @@ namespace MinecraftTunnel
         private readonly TcpClients client;
         private StateContext stateContext;
         private AsyncUserToken userToken;
-
         public Tunnel(string IP, int Port, int BufferSize)
         {
             client = new TcpClients(BufferSize);
@@ -71,6 +69,7 @@ namespace MinecraftTunnel
             login.Name = Name;
             buffer = baseProtocol.Pack(login);
             client.Send(buffer, 0, buffer.Length);
+            client.Flag = false;
             // Console.WriteLine($"Login完毕");
         }
         public void IO_Completed(object arg1, SocketAsyncEventArgs e)

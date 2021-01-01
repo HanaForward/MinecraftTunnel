@@ -12,7 +12,7 @@ namespace MinecraftTunnel
 {
     public class Program
     {
-        private static ushort MaxConnections;
+        public static ushort MaxConnections;
 
         public static ConnectConfig ServerConfig;
         public static ConnectConfig NatConfig;

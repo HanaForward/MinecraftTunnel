@@ -205,12 +205,10 @@ namespace MinecraftTunnel
                                 // 开始处理本次收到的数据包
                                 SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
                                 Response response = new Response("1.8.9", userToken.ProtocolVersion);
-                                response.players.online = 0;
-                                response.players.max = 1;
+                                response.players.online = Online.Count;
+                                response.players.max = Program.MaxConnections;
                                 response.players.sample = new List<SampleItem>();
-
                                 response.description.text = Program.QueryConfig.Motd;
-
                                 response.favicon = "";
 
                                 using (Block temp = new Block())
