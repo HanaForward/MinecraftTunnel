@@ -21,6 +21,7 @@ namespace MinecraftTunnel
 
         public DateTime ConnectDateTime;    // 连接时间
         public DateTime EndTime;            // 到期时间
+        public bool IsForge;
 
         public AsyncUserToken(int ReceiveBufferSize)
         {
@@ -81,6 +82,7 @@ namespace MinecraftTunnel
                 StartLogin = false;
                 tunnel.Close();
             }
+            IsForge = false;
             ProtocolVersion = 0;
             ServerSocket.Close();
         }

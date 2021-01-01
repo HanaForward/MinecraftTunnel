@@ -49,13 +49,17 @@ namespace MinecraftTunnel
             this.stateContext = stateContext;
             this.userToken = asyncUserToken;
         }
-        public void Login(string Name, int ProtocolVersion)
+        public void Login(string Name, int ProtocolVersion, bool IsForge)
         {
             BaseProtocol baseProtocol = new BaseProtocol();
             Handshake handshake = new Handshake();
             handshake.ProtocolVersion = ProtocolVersion;
 
-            handshake.ServerAddress = Program.QueryConfig.ServerAddress;
+            if (IsForge)
+                handshake.ServerAddress = Program.QueryConfig.ServerAddress + "\0FML\0";
+            else
+                handshake.ServerAddress = Program.QueryConfig.ServerAddress;
+
             handshake.ServerPort = Program.NatConfig.Port;
 
             handshake.NextState = NextState.login;
@@ -91,7 +95,6 @@ namespace MinecraftTunnel
 
                 if (count > 0 && userToken.ReceiveEventArgs.SocketError == SocketError.Success)
                 {
-
                     byte[] temp = new byte[count];
                     Array.Copy(Buffer, offset, temp, 0, count);
                     //userToken.Send();
@@ -111,6 +114,8 @@ namespace MinecraftTunnel
             catch (Exception ex)
             {
                 Program.log.Error("ProcessReceive Error" + ex.Message);
+                stateContext.CloseClientSocket(e);
+                Close();
             }
         }
         public void Close()

@@ -169,12 +169,6 @@ namespace MinecraftTunnel
                     do
                     {
                         baseProtocol.Analyze(block);
-                        // 需要处理分包
-                        //byte[] packet = new byte[baseProtocol.PacketSize];
-                        //Array.Copy(Buffer, offset, packet, 0, baseProtocol.PacketSize);
-                        // 回调               
-                        // OnReceive?.Invoke(userToken, packet, offset, baseProtocol.PacketSize);
-
                         if (baseProtocol.PacketId == 0)
                         {
                             if (baseProtocol.PacketSize > 3)
@@ -185,7 +179,7 @@ namespace MinecraftTunnel
                                     userToken.Tunnel(this);
 
                                     userToken.PlayerName = login.Name;
-                                    userToken.tunnel.Login(login.Name, userToken.ProtocolVersion);
+                                    userToken.tunnel.Login(login.Name, userToken.ProtocolVersion, userToken.IsForge);
                                     Online.Add(userToken.PlayerName, userToken);
                                 }
                                 else
@@ -194,6 +188,10 @@ namespace MinecraftTunnel
                                     userToken.ProtocolVersion = handshake.ProtocolVersion;
                                     if (handshake.NextState == NextState.login)
                                     {
+                                        if (handshake.ServerAddress.IndexOf("FML") > 0)
+                                        {
+                                            userToken.IsForge = true;
+                                        }
                                         userToken.StartLogin = true;
                                     }
                                     else
@@ -206,7 +204,7 @@ namespace MinecraftTunnel
                             {
                                 // 开始处理本次收到的数据包
                                 SocketAsyncEventArgs sendPacket = new SocketAsyncEventArgs();
-                                Response response = new Response("1.15.2", userToken.ProtocolVersion);
+                                Response response = new Response("1.8.9", userToken.ProtocolVersion);
                                 response.players.online = 0;
                                 response.players.max = 1;
                                 response.players.sample = new List<SampleItem>();

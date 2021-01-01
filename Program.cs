@@ -18,6 +18,9 @@ namespace MinecraftTunnel
         public static ConnectConfig NatConfig;
         public static QueryConfig QueryConfig;
 
+        public static string ConnectionString;
+
+
         public static readonly ILog log = LogManager.GetLogger("MinecraftTunnel");
 
         public static IConfigurationRoot Configuration { get; set; }
@@ -32,6 +35,8 @@ namespace MinecraftTunnel
             NatConfig = Configuration.GetSection("Nat").Get<ConnectConfig>();
             QueryConfig = Configuration.GetSection("Query").Get<QueryConfig>();
 
+            ConnectionString = Configuration["DataBase:ConnectionString"];
+
             StateContext stateContext = new StateContext(MaxConnections, ushort.MaxValue);
             stateContext.Init();
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, ServerConfig.Port);
@@ -39,7 +44,7 @@ namespace MinecraftTunnel
 
             int CursorTop, OnPlayer = 0;
 
-  
+
             while (true)
             {
                 Console.Clear();
@@ -70,12 +75,19 @@ namespace MinecraftTunnel
 
                 OnPlayer = temp;
                 // 开始打印玩家列表
-                foreach (var token in stateContext.Online)
+                try
                 {
-                    CursorTop = Console.CursorTop;
-                    Console.Write(new string(' ', Console.WindowWidth));//用空格将当前行填满，相当于清除当前行
-                    Console.SetCursorPosition(0, Console.CursorTop);//将光标至于当前行的开始位置
-                    Console.WriteLine($"玩家ID : {token.Key} 登录时间:{token.Value.ConnectDateTime} 到期时间:{token.Value.EndTime}");
+                    foreach (var token in stateContext.Online)
+                    {
+                        CursorTop = Console.CursorTop;
+                        Console.Write(new string(' ', Console.WindowWidth));//用空格将当前行填满，相当于清除当前行
+                        Console.SetCursorPosition(0, Console.CursorTop);//将光标至于当前行的开始位置
+                        Console.WriteLine($"玩家ID : {token.Key} 登录时间:{token.Value.ConnectDateTime} 到期时间:{token.Value.EndTime}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.Error(ex.Message);
                 }
 
                 Console.SetCursorPosition(0, 5);//将光标恢复至开始时的位置
