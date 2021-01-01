@@ -154,6 +154,9 @@ namespace MinecraftTunnel
 
             int offset = userToken.ReceiveEventArgs.Offset;
             int count = userToken.ReceiveEventArgs.BytesTransferred;
+
+            int endOffset = offset + count;
+
             byte[] Buffer = userToken.ReceiveEventArgs.Buffer;
 
             if (count > 0 && userToken.ReceiveEventArgs.SocketError == SocketError.Success)
@@ -247,9 +250,7 @@ namespace MinecraftTunnel
                                 userToken.ServerSocket.SendAsync(sendPacket);
                             }
                         }
-   
-
-                    } while (baseProtocol.block.step < count);
+                    } while (baseProtocol.block.step < endOffset);
                 }
 
                 catch (Exception ex)
