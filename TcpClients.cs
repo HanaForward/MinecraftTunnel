@@ -15,7 +15,7 @@ namespace MinecraftTunnel
         /// <summary>
         /// 套接字
         /// </summary>
-        private Socket socket;
+        public Socket socket;
         /// <summary>
         /// 发送端SocketAsyncEventArgs对象重用池，发送套接字操作
         /// </summary>

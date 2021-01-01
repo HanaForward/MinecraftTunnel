@@ -1,5 +1,4 @@
 ﻿using log4net;
-using log4net.Config;
 using Microsoft.Extensions.Configuration;
 using MinecraftTunnel.Model;
 using System;
@@ -8,13 +7,12 @@ using System.Net;
 using System.Threading;
 
 
-[assembly: XmlConfigurator(ConfigFile = "log4net.config", Watch = true)]
+[assembly: log4net.Config.XmlConfigurator(Watch = true)]
 namespace MinecraftTunnel
 {
     public class Program
     {
         private static ushort MaxConnections;
-        private static int BufferSize;
 
         public static ConnectConfig ServerConfig;
         public static ConnectConfig NatConfig;
@@ -26,19 +24,15 @@ namespace MinecraftTunnel
 
         public static void Main(string[] args)
         {
-            log.Error("MinecraftTunnel Start");
-
             var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddYamlFile("appsettings.yaml");
             Configuration = builder.Build();
 
             _ = ushort.TryParse(Configuration["MaxConnections"], out MaxConnections);
-            _ = int.TryParse(Configuration["BufferSize"], out BufferSize);
-
             ServerConfig = Configuration.GetSection("Server").Get<ConnectConfig>();
             NatConfig = Configuration.GetSection("Nat").Get<ConnectConfig>();
             QueryConfig = Configuration.GetSection("Query").Get<QueryConfig>();
 
-            StateContext stateContext = new StateContext(MaxConnections, BufferSize);
+            StateContext stateContext = new StateContext(MaxConnections, ushort.MaxValue);
             stateContext.Init();
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Any, ServerConfig.Port);
             stateContext.Start(serverIP);
@@ -69,7 +63,6 @@ namespace MinecraftTunnel
                 {
                     for (int i = 0; i < OnPlayer - temp; i++)
                     {
-                        Thread.Sleep(0);
                         ClearCurrentConsoleLine(4 + temp + i);
                     }
                 }
@@ -78,7 +71,6 @@ namespace MinecraftTunnel
                 // 开始打印玩家列表
                 foreach (var token in stateContext.Online)
                 {
-                    Thread.Sleep(0);
                     CursorTop = Console.CursorTop;
                     Console.Write(new string(' ', Console.WindowWidth));//用空格将当前行填满，相当于清除当前行
                     Console.SetCursorPosition(0, Console.CursorTop);//将光标至于当前行的开始位置
