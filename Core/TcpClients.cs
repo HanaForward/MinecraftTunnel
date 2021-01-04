@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace MinecraftTunnel
+namespace MinecraftTunnel.Core
 {
     /// <summary>
     /// 客户端基础类

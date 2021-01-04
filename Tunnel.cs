@@ -1,4 +1,5 @@
-﻿using MinecraftTunnel.Protocol;
+﻿using MinecraftTunnel.Core;
+using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Protocol.ServerBound;
 using System;
 using System.Net.Sockets;

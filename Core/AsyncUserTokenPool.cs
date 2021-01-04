@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MinecraftTunnel
+namespace MinecraftTunnel.Core
 {
     public class AsyncUserTokenPool
     {

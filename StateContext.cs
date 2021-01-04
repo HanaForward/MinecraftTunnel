@@ -1,4 +1,5 @@
-﻿using MinecraftTunnel.Extensions;
+﻿using MinecraftTunnel.Core;
+using MinecraftTunnel.Extensions;
 using MinecraftTunnel.Model;
 using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Protocol.ClientBound;
@@ -52,7 +53,6 @@ namespace MinecraftTunnel
             //write posted to the socket simultaneously
             semaphore = new Semaphore(MaxConnections, MaxConnections);
         }
-
         public void Init()
         {
             AsyncUserToken userToken;
@@ -152,7 +152,6 @@ namespace MinecraftTunnel
         /// <param name="e">操作对象</param>
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
-            // 检查远程主机是否关闭连接
             AsyncUserToken userToken = (AsyncUserToken)e.UserToken;
 
             int offset = userToken.ReceiveEventArgs.Offset;

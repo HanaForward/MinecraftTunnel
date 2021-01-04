@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove=".gitattributes" />
+    <None Remove=".gitignore" />
     <None Remove="fxa15fda.tep~" />
     <None Remove="Tunnel.1.cs.back" />
   </ItemGroup>

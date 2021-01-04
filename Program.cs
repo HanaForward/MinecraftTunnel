@@ -52,10 +52,14 @@ namespace MinecraftTunnel
 
             int CursorTop, OnPlayer = 0;
 
-
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
+#if DEBUG
 
+
+#endif
+
+#if !DEBUG
             while (true)
             {
                 Console.Clear();
@@ -104,6 +108,8 @@ namespace MinecraftTunnel
                 Console.SetCursorPosition(0, 5);//将光标恢复至开始时的位置
                 Thread.Sleep(1000);
             }
+#endif
+            Console.ReadLine();
         }
 
         public static void ClearCurrentConsoleLine(int Cursor = 0)

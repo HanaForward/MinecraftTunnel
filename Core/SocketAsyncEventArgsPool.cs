@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Sockets;
 
-namespace MinecraftTunnel
+namespace MinecraftTunnel.Core
 {
     public class SocketAsyncEventArgsPool
     {
