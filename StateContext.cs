@@ -179,25 +179,28 @@ namespace MinecraftTunnel
                                 {
                                     Login login = baseProtocol.Resolve<Login>();
                                     UserModel userModel = databaseManager.FindPlayer(login.Name);
-                                    if (userModel == null)
+
+                                    if (Program.WhiteList)
                                     {
-                                        userToken.Kick(Program.NoFind);
-                                    }
-                                    else
-                                    {
-                                        if (userModel.End_at < DateTime.Now)
+                                        if (userModel == null)
                                         {
-                                            userToken.Kick(Program.IsEnd);
+                                            userToken.Kick(Program.NoFind);
+                                            break;
                                         }
                                         else
                                         {
-                                            userToken.Tunnel(this);
-                                            userToken.PlayerName = login.Name;
-                                            userToken.EndTime = userModel.End_at;
-                                            userToken.tunnel.Login(login.Name, userToken.ProtocolVersion, userToken.IsForge);
-                                            Online.Add(userToken.PlayerName, userToken);
+                                            if (userModel.End_at < DateTime.Now)
+                                            {
+                                                userToken.Kick(Program.IsEnd);
+                                                break;
+                                            }
                                         }
                                     }
+                                    userToken.Tunnel(this);
+                                    userToken.PlayerName = login.Name;
+                                    userToken.EndTime = userModel.End_at;
+                                    userToken.tunnel.Login(login.Name, userToken.ProtocolVersion, userToken.IsForge);
+                                    Online.Add(userToken.PlayerName, userToken);
                                 }
                                 else
                                 {

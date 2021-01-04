@@ -14,12 +14,14 @@ namespace MinecraftTunnel
     public class Program
     {
         public static ushort MaxConnections;
+        public static bool WhiteList;
 
         public static ConnectConfig ServerConfig;
         public static ConnectConfig NatConfig;
         public static QueryConfig QueryConfig;
 
 
+        
         public static string NoFind;
         public static string IsEnd;
 
@@ -36,6 +38,8 @@ namespace MinecraftTunnel
             Configuration = builder.Build();
 
             _ = ushort.TryParse(Configuration["MaxConnections"], out MaxConnections);
+            _ = bool.TryParse(Configuration["WhiteList"], out WhiteList);
+
             ServerConfig = Configuration.GetSection("Server").Get<ConnectConfig>();
             NatConfig = Configuration.GetSection("Nat").Get<ConnectConfig>();
             QueryConfig = Configuration.GetSection("Query").Get<QueryConfig>();
