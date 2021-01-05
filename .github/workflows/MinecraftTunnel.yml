@@ -1,9 +1,8 @@
-name: .NET
+name: MinecraftTunnel
 
 on:
-  create:
-    tags:
-      - "*"
+  release:
+    types: [published]
   push:
     branches: [ master ]
   pull_request:
