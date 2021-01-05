@@ -3,10 +3,6 @@ name: MinecraftTunnel
 on:
   release:
     types: [published]
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
   build:
@@ -45,5 +41,5 @@ jobs:
       with:
         upload_url: ${{ steps.get-release.outputs.upload_url }}
         asset_path: ./release/release.zip
-        asset_name: MinecraftTunnel-v${{ steps.get_version.outputs.VERSION }}.zip
+        asset_name: MinecraftTunnel.zip
         asset_content_type: application/zip
