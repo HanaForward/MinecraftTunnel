@@ -38,10 +38,6 @@ namespace MinecraftTunnel
             {
                 Program.log.Error("ProcessReceive Error" + ex.Message);
             }
-            /*
-            userToken.SendEventArgs.SetBuffer(obj);
-            userToken.ServerSocket.SendAsync(userToken.SendEventArgs);
-            */
         }
         public void Bind(StateContext stateContext, AsyncUserToken asyncUserToken)
         {
@@ -99,11 +95,20 @@ namespace MinecraftTunnel
                     Array.Copy(Buffer, offset, temp, 0, count);
                     //userToken.Send();
                     client.socket.Send(temp);
+                    // 服务器包拆解
+                    if (userToken.IsCompression)
+                    {
+                        int Length = count + offset;
+                        do
+                        {
+                           
+
+                        } while (offset < Length);
+                    }
                     // 准备下次接收数据      
                     bool willRaiseEvent = userToken.ServerSocket.ReceiveAsync(userToken.ReceiveEventArgs); //投递接收请求
                     if (!willRaiseEvent)
                         ProcessReceive(userToken.ReceiveEventArgs);
-
                 }
                 else
                 {

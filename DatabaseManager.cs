@@ -10,8 +10,6 @@ namespace MinecraftTunnel
         {
 
         }
-
-
         public UserModel FindPlayer(string PlayerName)
         {
             UserModel userModel = null;

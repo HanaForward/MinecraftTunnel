@@ -178,10 +178,9 @@ namespace MinecraftTunnel
                                 if (userToken.StartLogin)
                                 {
                                     Login login = baseProtocol.Resolve<Login>();
-                                    UserModel userModel = databaseManager.FindPlayer(login.Name);
-
                                     if (Program.WhiteList)
                                     {
+                                        UserModel userModel = databaseManager.FindPlayer(login.Name);
                                         if (userModel == null)
                                         {
                                             userToken.Kick(Program.NoFind);
@@ -195,10 +194,10 @@ namespace MinecraftTunnel
                                                 break;
                                             }
                                         }
+                                        userToken.EndTime = userModel.End_at;
                                     }
                                     userToken.Tunnel(this);
                                     userToken.PlayerName = login.Name;
-                                    userToken.EndTime = userModel.End_at;
                                     userToken.tunnel.Login(login.Name, userToken.ProtocolVersion, userToken.IsForge);
                                     Online.Add(userToken.PlayerName, userToken);
                                 }

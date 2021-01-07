@@ -25,6 +25,7 @@ namespace MinecraftTunnel.Core
         public DateTime ConnectDateTime;    // 连接时间
         public DateTime EndTime;            // 到期时间
         public bool IsForge;
+        public bool IsCompression = false;
 
         public AsyncUserToken(int ReceiveBufferSize)
         {

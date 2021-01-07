@@ -1,6 +1,6 @@
 ﻿# 最大连接数,超过连接数后的连接不在被处理
 MaxConnections : 100
-WhiteList : true
+WhiteList : false
 
 #数据储存数据库
 DataBase:
@@ -15,8 +15,8 @@ Server:
 
 #转发的目标
 Nat:
-   IP: 160.119.70.178
-   Port : 10001
+   IP: 172.65.234.205
+   Port : 25565
 
 #Query
 Query:

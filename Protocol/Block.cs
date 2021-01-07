@@ -25,7 +25,7 @@ namespace MinecraftTunnel.Protocol
             this.buffer = buffer;
             step = 0;
         }
-        public Block(byte[] buffer,int step)
+        public Block(byte[] buffer, int step)
         {
             this.buffer = buffer;
             this.step = step;
@@ -36,6 +36,12 @@ namespace MinecraftTunnel.Protocol
                 return 0;
             return buffer[step++];
         }
+
+        public byte[] Remaini()
+        {
+            throw new NotImplementedException();
+        }
+
         public int readVarInt()
         {
             int numRead = 0;
