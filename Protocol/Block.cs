@@ -25,11 +25,21 @@ namespace MinecraftTunnel.Protocol
             this.buffer = buffer;
             step = 0;
         }
+
         public Block(byte[] buffer, int step)
         {
             this.buffer = buffer;
             this.step = step;
         }
+
+        public byte[] readData(int Length)
+        {
+            byte[] data = new byte[Length];
+            Array.Copy(buffer, step, data, 0, Length);
+            step += Length;
+            return data;
+        }
+
         public byte readByte()
         {
             if (step >= buffer.Length)

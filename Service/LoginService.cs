@@ -13,36 +13,33 @@ namespace MinecraftTunnel.Service
     {
         private readonly ILogger ILogger;
         private readonly IConfiguration IConfiguration;
+        private readonly ServerCore ServerCore;
 
-        
+
         private static ServerConfig ServerConfig;
-
-        private ServerCore serverCore;
-        public LoginService(ILogger<LoginService> ILogger, IConfiguration IConfiguration)
+        public LoginService(ILogger<LoginService> ILogger, IConfiguration IConfiguration, ServerCore ServerCore)
         {
             this.ILogger = ILogger;
             this.IConfiguration = IConfiguration;
+            this.ServerCore = ServerCore;
         }
         public Task StartAsync(CancellationToken cancellationToken)
         {
-           
             ServerConfig = IConfiguration.GetSection("Server").Get<ServerConfig>();
-
-            serverCore = new ServerCore();
-            serverCore.Bind(ServerConfig.IP, ServerConfig.Port);
-            serverCore.Start();
+            ServerCore.Bind(ServerConfig.IP, ServerConfig.Port);
+            ServerCore.Start();
 
 
             return Task.CompletedTask;
         }
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            serverCore.Stop();
+            ServerCore.Stop();
             return Task.CompletedTask;
         }
         public void Dispose()
         {
-            serverCore.Dispose();
+            ServerCore.Dispose();
         }
     }
 }

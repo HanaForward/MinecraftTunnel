@@ -2,6 +2,6 @@
 {
     public class Ping
     {
-        public long Payload;
+        public long Payload { get; set; }
     }
 }

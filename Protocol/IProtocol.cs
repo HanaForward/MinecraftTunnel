@@ -1,9 +1,21 @@
 ﻿namespace MinecraftTunnel.Protocol
 {
-    public interface IProtocol
+    /// <summary>
+    /// 任何一个传输协议处理过程需要继承本方法
+    /// </summary>
+    public abstract class IAnalyzeProtocol
     {
-        int PacketId { get; }
-        void Analyze(Block block);
-        byte[] Pack();
+        /// <summary>
+        /// 解析
+        /// </summary>
+        /// <param name="PacketData"></param>
+        public abstract void Analyze(byte[] PacketData);
+        /// <summary>
+        /// 逆解析
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="ProtocolModel"></param>
+        /// <returns></returns>
+        public abstract byte[] Resolve<T>(T ProtocolModel);
     }
 }
