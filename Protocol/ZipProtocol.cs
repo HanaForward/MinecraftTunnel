@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MinecraftTunnel.Protocol
+﻿namespace MinecraftTunnel.Protocol
 {
     public class ZipProtocol
     {
-
         public Block block;
 
         public int PacketLength;        // 数据包中剩余的字节数，包括数据长度字段
@@ -24,9 +17,7 @@ namespace MinecraftTunnel.Protocol
             this.PacketLength = block.readVarInt();
             this.DataLength = block.readVarInt();
             this.PacketID = block.readVarInt();
-
-            this.Data = block.Remaini();
+            this.Data = block.readData(DataLength);
         }
-
     }
 }

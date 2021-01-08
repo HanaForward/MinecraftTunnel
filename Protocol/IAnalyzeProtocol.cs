@@ -1,7 +1,7 @@
 ﻿namespace MinecraftTunnel.Protocol
 {
     /// <summary>
-    /// 任何一个传输协议处理过程需要继承本方法
+    /// 任何一个传输协议处理过程需要继承
     /// </summary>
     public abstract class IAnalyzeProtocol
     {

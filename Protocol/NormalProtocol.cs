@@ -1,13 +1,12 @@
 ﻿namespace MinecraftTunnel.Protocol
 {
-    public class BaseProtocol
+    public class NormalProtocol
     {
         public Block block;
-
         public int PacketSize;
         public int PacketId;
         public byte[] PacketData;
-        public BaseProtocol() { }
+        public NormalProtocol() { }
         public void Analyze(Block block)
         {
             this.block = block;

@@ -8,10 +8,9 @@ using System.Text.Unicode;
 
 namespace MinecraftTunnel.Protocol
 {
-    public class Chat : IProtocol
+    public class Chat
     {
-        [JsonIgnore]
-        public int PacketId => 0;
+        public int PacketId = 0;
         public string text { get; set; }
         public string color { get; set; }
         public bool bold { get; set; }

@@ -47,11 +47,6 @@ namespace MinecraftTunnel.Protocol
             return buffer[step++];
         }
 
-        public byte[] Remaini()
-        {
-            throw new NotImplementedException();
-        }
-
         public int readVarInt()
         {
             int numRead = 0;

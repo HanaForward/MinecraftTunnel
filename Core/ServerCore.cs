@@ -139,7 +139,7 @@ namespace MinecraftTunnel.Core
             if (count > 0 && playerToken.ReceiveEventArgs.SocketError == SocketError.Success)
             {
                 Block block = new Block(Buffer, offset);
-                BaseProtocol baseProtocol = new BaseProtocol();
+                NormalProtocol baseProtocol = new NormalProtocol();
                 do
                 {
                     baseProtocol.Analyze(block);
