@@ -5,9 +5,11 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Core;
 using MinecraftTunnel.Model;
+using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Service;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 
 namespace MinecraftTunnel
@@ -34,6 +36,12 @@ namespace MinecraftTunnel
         public static IConfigurationRoot Configuration { get; set; }
         public static void Main(string[] args)
         {
+            Block block = new Block(new byte[10]);
+            var readString = typeof(Block).GetMethod("readInt", BindingFlags.Instance | BindingFlags.Public);
+            readString.Invoke(block, null);
+
+
+
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             host = CreateHostBuilder(args).Build();
             host.Run();

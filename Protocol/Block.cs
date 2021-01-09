@@ -1,37 +1,22 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 
 namespace MinecraftTunnel.Protocol
 {
     public class Block : IDisposable
     {
-        public MemoryStream stream;
         public byte[] buffer;
         public int step;
-
-
-        public Block()
-        {
-            stream = new MemoryStream();
-        }
-        public Block(int Position)
-        {
-            stream = new MemoryStream();
-            stream.Position = Position;
-        }
         public Block(byte[] buffer)
         {
             this.buffer = buffer;
             step = 0;
         }
-
         public Block(byte[] buffer, int step)
         {
             this.buffer = buffer;
             this.step = step;
         }
-
         public byte[] readData(int Length)
         {
             byte[] data = new byte[Length];
@@ -39,25 +24,119 @@ namespace MinecraftTunnel.Protocol
             step += Length;
             return data;
         }
-
+        public bool readBoolean()
+        {
+            if (step >= buffer.Length)
+                return false;
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buffer, step, 1);
+            }
+            var temp = BitConverter.ToBoolean(buffer, step);
+            step++;
+            return temp;
+        }
+        public sbyte readSByte()
+        {
+            if (step >= buffer.Length)
+                return 0;
+            return (sbyte)buffer[step++];
+        }
         public byte readByte()
         {
             if (step >= buffer.Length)
                 return 0;
             return buffer[step++];
         }
-
+        public short readShort()
+        {
+            if (step >= buffer.Length)
+                return 0;
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buffer, step, 2);
+            }
+            var temp = BitConverter.ToInt16(buffer, step);
+            step += 2;
+            return temp;
+        }
+        public ushort readUnsignedShort()
+        {
+            if (step >= buffer.Length)
+                return 0;
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buffer, step, 2);
+            }
+            var temp = BitConverter.ToUInt16(buffer, step);
+            step += 2;
+            return temp;
+        }
+        public int readInt()
+        {
+            if (step >= buffer.Length)
+                return 0;
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buffer, step, 4);
+            }
+            var temp = BitConverter.ToInt32(buffer, step);
+            step += 4;
+            return temp;
+        }
+        public long readLong()
+        {
+            if (step >= buffer.Length)
+                return 0;
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buffer, step, 8);
+            }
+            var temp = BitConverter.ToInt64(buffer, step);
+            step += 8;
+            return temp;
+        }
+        public float readFloat()
+        {
+            if (step >= buffer.Length)
+                return 0;
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buffer, step, 4);
+            }
+            var temp = BitConverter.ToSingle(buffer, step);
+            step += 4;
+            return temp;
+        }
+        public double readDouble()
+        {
+            if (step >= buffer.Length)
+                return 0;
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buffer, step, 8);
+            }
+            var temp = BitConverter.ToDouble(buffer, step);
+            step += 8;
+            return temp;
+        }
+        public string readString()
+        {
+            int jsonLength = readVarInt();
+            var str = Encoding.UTF8.GetString(buffer, step, jsonLength);
+            step += jsonLength;
+            return str;
+        }
         public int readVarInt()
         {
             int numRead = 0;
             int result = 0;
-            byte read;
+            sbyte read;
             do
             {
-                read = readByte();
+                read = readSByte();
                 int value = read & 0b01111111;
                 result |= (value << (7 * numRead));
-
                 numRead++;
                 if (numRead > 5)
                 {
@@ -71,13 +150,12 @@ namespace MinecraftTunnel.Protocol
         {
             int numRead = 0;
             long result = 0;
-            byte read;
+            sbyte read;
             do
             {
-                read = readByte();
+                read = readSByte();
                 long value = (read & 0b01111111);
                 result |= (value << (7 * numRead));
-
                 numRead++;
                 if (numRead > 10)
                 {
@@ -87,85 +165,9 @@ namespace MinecraftTunnel.Protocol
 
             return result;
         }
-        public ushort readShort()
-        {
-            byte b = readByte();
-            return (ushort)((b << 8) + (readByte() & 0xFF));
-        }
-        public long readLong()
-        {
-            byte[] temp = new byte[8];
-            Array.Copy(buffer, step, temp, 0, 8);
-            step += 8;
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(temp);
-            return BitConverter.ToInt64(temp, 0);
-        }
-
-        public byte[] GetBytes()
-        {
-            return stream.ToArray();
-        }
-        public string readString(int Length)
-        {
-            if (step - Length >= buffer.Length)
-                return null;
-            byte[] arrayOfByte = new byte[Length];
-            Array.Copy(buffer, step, arrayOfByte, 0, Length);
-            step = step + Length;
-            return Encoding.UTF8.GetString(arrayOfByte);
-        }
-        public void WriteInt(int value)
-        {
-            do
-            {
-                byte b = (byte)(value & 0x7F);
-                value >>= 7;
-                if (value != 0)
-                    b = (byte)(b | 0x80);
-                stream.WriteByte(b);
-            } while (value != 0);
-        }
-        public void WriteUShort(ushort value)
-        {
-            stream.WriteByte((byte)(value >> 8 & 0xFF));
-            stream.WriteByte((byte)(value & 0xFF));
-        }
-        public void WriteShort(short value)
-        {
-            stream.WriteByte((byte)(value >> 8 & 0xFF));
-            stream.WriteByte((byte)(value & 0xFF));
-        }
-        public void WriteString(string data, bool longString)
-        {
-            byte[] arrayOfByte = Encoding.UTF8.GetBytes(data);
-            int Length = arrayOfByte.Length;
-            if (longString)
-                WriteInt(Length);
-            stream.Write(arrayOfByte, 0, arrayOfByte.Length);
-        }
-        public void WriteLong(long value)
-        {
-            var bytes = BitConverter.GetBytes(value);
-            if (BitConverter.IsLittleEndian)
-                Array.Reverse(bytes);
-            stream.Write(bytes);
-        }
-
-
-
-        [Obsolete]
-        public void SetSize(int size)
-        {
-            stream.Position = 0;
-            WriteInt(size);
-        }
         public void Dispose()
         {
-            if (stream != null)
-                stream.Dispose();
             buffer = null;
         }
-
     }
 }

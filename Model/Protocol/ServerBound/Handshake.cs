@@ -1,11 +1,13 @@
-﻿namespace MinecraftTunnel.Protocol.ServerBound
+﻿using MinecraftTunnel.Extensions;
+
+namespace MinecraftTunnel.Protocol.ServerBound
 {
     public class Handshake
     {
         /// <summary>
         /// 协议版本
         /// </summary>
-        public int ProtocolVersion { get; set; }
+        public VarInt ProtocolVersion { get; set; }
         /// <summary>
         /// 服务器地址
         /// </summary>
@@ -17,8 +19,16 @@
         /// <summary>
         /// 下一步状态
         /// </summary>
-        public NextState NextState { get; set; }
-        public int PacketId => 0;
+        public VarInt nextState { get; set; }
+
+        public NextState NextState;
+
+        public int PacketId = 0;
+
+        public Handshake()
+        {
+
+        }
     }
     public enum NextState
     {
