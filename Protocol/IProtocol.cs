@@ -1,4 +1,6 @@
-﻿namespace MinecraftTunnel.Protocol
+﻿using MinecraftTunnel.Common;
+
+namespace MinecraftTunnel.Protocol
 {
     /// <summary>
     /// 任何一个传输协议处理过程需要继承
@@ -9,13 +11,13 @@
         /// 解析
         /// </summary>
         /// <param name="PacketData"></param>
-        public abstract void Analyze(byte[] PacketData);
+        public abstract void Analyze(PlayerToken playerToken, byte[] PacketData);
         /// <summary>
         /// 逆解析
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ProtocolModel"></param>
         /// <returns></returns>
-        public abstract byte[] Resolve<T>(T ProtocolModel);
+        // public abstract byte[] Resolve<T>(PlayerToken playerToken, T ProtocolModel);
     }
 }

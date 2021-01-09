@@ -40,7 +40,7 @@ namespace MinecraftTunnel.Protocol
                             break;
                         case "String":
                              // obj = block.readString();
-                            il.Emit(OpCodes.Callvirt, typeof(Block).GetMethod("readString"));
+                            il.Emit(OpCodes.Callvirt, typeof(Block).GetMethod("readString", new Type[] { }));
                             break;
                         case "Boolean":
                             // block.readBoolean();

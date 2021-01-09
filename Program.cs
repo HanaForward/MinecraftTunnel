@@ -55,11 +55,13 @@ namespace MinecraftTunnel
                      services.AddHostedService<LoginService>();
                      services.AddScoped<ServerCore>();
 
-                     services.AddSingleton<TotalService>(o =>
+
+
+                     services.AddSingleton(o =>
                      {
                          return new TotalService();
                      });
-                     services.AddSingleton<AnalysisService>(o =>
+                     services.AddSingleton(o =>
                      {
                          var log = (ILogger<AnalysisService>)o.GetService(typeof(ILogger<AnalysisService>));
                          return new AnalysisService(log);

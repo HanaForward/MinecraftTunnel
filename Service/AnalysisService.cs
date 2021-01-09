@@ -11,21 +11,23 @@ namespace MinecraftTunnel.Service
     public class AnalysisService
     {
         private readonly ILogger ILogger;
-        private readonly Dictionary<int, Action<byte[]>> AnalysisFun = new Dictionary<int, Action<byte[]>>();
+        private readonly Dictionary<int, Action<PlayerToken, byte[]>> AnalysisFun = new Dictionary<int, Action<PlayerToken, byte[]>>();
         public AnalysisService(ILogger<AnalysisService> ILogger)
         {
             this.ILogger = ILogger;
+
+            LoginProtocol loginProtocol = new LoginProtocol();
+
+            AnalysisFun.Add(0, loginProtocol.Analyze);
+
         }
+
         public Task Analysis(PlayerToken playerToken, int PacketId, byte[] PacketData)
         {
             ILogger.LogInformation($"PacketId : {PacketId} , Size : {PacketData.Length} , Data : {PacketData}");
-
-            Block block = new Block(PacketData);
-            Handshake handshake = EntityMapper.MapToEntities<Handshake>(block);
-           
-            if (AnalysisFun.TryGetValue(PacketId, out Action<byte[]> action))
+            if (AnalysisFun.TryGetValue(PacketId, out Action<PlayerToken, byte[]> action))
             {
-                action?.Invoke(PacketData);
+                action?.Invoke(playerToken, PacketData);
             }
             return Task.CompletedTask;
         }

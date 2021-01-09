@@ -15,8 +15,17 @@ namespace MinecraftTunnel.Common
 
         protected byte[] ReceiveBuffer;
         public string PlayerName;                            // 玩家Name
+
+        public void Tunnel()
+        {
+
+
+        }
+
         public DateTime ConnectDateTime;                     // 连接时间
         public DateTime EndTime;                             // 到期时间
+        public bool StartLogin;
+        internal int ProtocolVersion;
 
         public PlayerToken()
         {

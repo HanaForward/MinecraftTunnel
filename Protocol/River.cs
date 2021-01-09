@@ -16,7 +16,6 @@ namespace MinecraftTunnel.Protocol
             stream = new MemoryStream();
             stream.Position = Position;
         }
-
         public byte[] GetBytes()
         {
             return stream.ToArray();

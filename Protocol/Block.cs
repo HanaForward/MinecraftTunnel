@@ -127,6 +127,12 @@ namespace MinecraftTunnel.Protocol
             step += jsonLength;
             return str;
         }
+        public string readString(int Length)
+        {
+            var str = Encoding.UTF8.GetString(buffer, step, Length);
+            step += Length;
+            return str;
+        }
         public int readVarInt()
         {
             int numRead = 0;
