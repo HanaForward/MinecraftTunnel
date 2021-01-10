@@ -2,11 +2,11 @@
 {
     public abstract class ProtocolHeand
     {
-        public Block block;
+        public abstract Block block { get; set; }
 
-        public int PacketSize;
-        public int PacketId;
-        public byte[] PacketData;
+        public abstract int PacketSize { get; set; }
+        public abstract int PacketId { get; set; }
+        public abstract byte[] PacketData { get; set; }
         public abstract void Analyze(Block block);
     }
 }

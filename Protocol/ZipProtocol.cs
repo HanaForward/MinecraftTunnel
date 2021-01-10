@@ -7,12 +7,12 @@ namespace MinecraftTunnel.Protocol
 {
     public class ZipProtocol : ProtocolHeand
     {
-        public new Block block;
+        public override Block block { get; set; }
 
-        public new int PacketSize;           // 数据包中剩余的字节数，包括数据长度字段
+        public override int PacketSize { get; set; }           // 数据包中剩余的字节数，包括数据长度字段
         public int DataLength;               // 如果长度为0则标识当前数据包未压缩,否则为原始大小
-        public new int PacketId;             // zlib压缩的数据包Id
-        public new byte[] PacketData;        // zlib压缩的荷载数据
+        public override int PacketId { get; set; }            // zlib压缩的数据包Id
+        public override byte[] PacketData { get; set; }        // zlib压缩的荷载数据
 
         public ZipProtocol() { }
 

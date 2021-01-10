@@ -3,11 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MinecraftTunnel.Common;
 using MinecraftTunnel.Core;
 using MinecraftTunnel.Model;
 using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Service;
+using MinecraftTunnel.Service.ProtocolService;
 using System;
 using System.IO;
 using System.Reflection;
@@ -53,8 +53,7 @@ namespace MinecraftTunnel
              Host.CreateDefaultBuilder(args)
                  .ConfigureServices((hostContext, services) =>
                  {
-                     services.AddSingleton<LoginProtocol>();
-                     services.AddHostedService<LoginService>();
+                     services.AddHostedService<TunnelService>();
                      services.AddSingleton<ServerCore>();
                      services.AddSingleton(o =>
                      {

@@ -1,44 +1,37 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MinecraftTunnel.Core;
-using MinecraftTunnel.Model;
+using MinecraftTunnel.Common;
+using MinecraftTunnel.Protocol;
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace MinecraftTunnel.Service
 {
-    public class LoginService : IHostedService, IDisposable
+    public class LoginService : IProtocol<object>
     {
         private readonly ILogger ILogger;
         private readonly IConfiguration IConfiguration;
-        private readonly ServerCore ServerCore;
 
+        public object Instance { get; set; }
+        public Action<PlayerToken, object> Action { get; set; }
+        public bool NeedAnalysis { get; set; } = false;
 
-        private static ServerConfig ServerConfig;
-        public LoginService(ILogger<LoginService> ILogger, IConfiguration IConfiguration, ServerCore ServerCore)
+        public LoginService(ILogger<TunnelService> ILogger, IConfiguration IConfiguration)
         {
             this.ILogger = ILogger;
             this.IConfiguration = IConfiguration;
-            this.ServerCore = ServerCore;
+
+            this.Action = Auth;
         }
-        public Task StartAsync(CancellationToken cancellationToken)
+
+        private void Auth(PlayerToken playerToken, object obj)
         {
-            ServerConfig = IConfiguration.GetSection("Server").Get<ServerConfig>();
-            ServerCore.Start(ServerConfig.IP, ServerConfig.Port);
+            if (obj == null)
+            {
 
 
-            return Task.CompletedTask;
-        }
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            ServerCore.Stop();
-            return Task.CompletedTask;
-        }
-        public void Dispose()
-        {
-            ServerCore.Dispose();
+                return;
+            }
+            byte[] buffer = (byte[])obj;
         }
     }
 }

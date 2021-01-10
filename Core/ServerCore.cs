@@ -1,10 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
-using MinecraftTunnel.Protocol;
-using MinecraftTunnel.Service;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -14,49 +11,34 @@ namespace MinecraftTunnel.Core
     public class ServerCore : TunnelCore
     {
         private readonly ILogger ILogger;                               // 日志
-        private readonly IConfiguration IConfiguration;
-        private readonly TotalService totalService;                     // 统计服务
-        private readonly AnalysisService analysisService;               // 数据包处理服务
-
+        private readonly IConfiguration IConfiguration;                 // 配置文件
         private Semaphore semaphore;                                    // 信号量 控制最大连接数
-
-        private Dictionary<string, PlayerToken> ValuePairs;             // 玩家存储器
 
         private ushort MaxConnections;                                  // 最大连接数
         private Socket ServerSocket;                                    // Socket
         private TokenPool TokenPool;                                    // 连接池
 
-        public ClientCore ClientCore;
+        public Action<PlayerToken, byte[]> OnReceive { get; set; }
+        public Action<PlayerToken, byte[]> OnSend { get; set; }
 
-        public Action<PlayerToken, byte[]> OnReceive { get; internal set; }
-        public Action<PlayerToken, byte[]> OnSend { get; internal set; }
-
-        public void Tunnel(PlayerToken playerToken, string iP, ushort port)
-        {
-            ClientCore = new ClientCore(playerToken);
-            ClientCore.Start(iP, port);
-        }
-
-
-        public ServerCore(ILogger<ServerCore> ILogger, IConfiguration IConfiguration, TotalService totalService, AnalysisService analysisService)
+        public ServerCore(ILogger<ServerCore> ILogger, IConfiguration IConfiguration)
         {
             this.ILogger = ILogger;
             this.IConfiguration = IConfiguration;
-            this.totalService = totalService;
-            this.analysisService = analysisService;
 
             _ = ushort.TryParse(IConfiguration["MaxConnections"], out MaxConnections);
-            TokenPool = new TokenPool(MaxConnections + 1);
+            TokenPool = new TokenPool(MaxConnections);
             ServerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
             PlayerToken playerToken;
             for (int i = 0; i < MaxConnections; i++) //按照连接数建立读写对象
             {
                 playerToken = new PlayerToken();
+                playerToken.ReceiveEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+                playerToken.SendEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
                 TokenPool.Push(playerToken);
             }
         }
-
         public override void Start(string IP, int Port)
         {
             IPAddress iPAddress = IPAddress.Parse(IP);
@@ -64,11 +46,31 @@ namespace MinecraftTunnel.Core
             ServerSocket.Bind(serverIP);
             ServerSocket.NoDelay = true;
 
-            semaphore = new Semaphore(MaxConnections, MaxConnections + 1);
+            semaphore = new Semaphore(MaxConnections, MaxConnections);
+
             ServerSocket.Listen(100);
             StartAccept(null);
         }
 
+        /// <summary>
+        /// 每当套接字上完成接收或发送操作时，都会调用此方法。
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e">与完成的接收操作关联的SocketAsyncEventArg</param>
+        void IO_Completed(object sender, SocketAsyncEventArgs e)
+        {
+            switch (e.LastOperation)
+            {
+                case SocketAsyncOperation.Receive:
+                    ProcessReceive(e);
+                    break;
+                case SocketAsyncOperation.Send:
+                    ProcessSend(e);
+                    break;
+                default:
+                    throw new ArgumentException("The last operation completed on the socket was not a receive or send");
+            }
+        }
 
         /// <summary>
         /// accept 异步回调
@@ -113,15 +115,10 @@ namespace MinecraftTunnel.Core
         /// <param name="e">操作对象</param>
         private void ProcessAccept(SocketAsyncEventArgs e)
         {
-            /*
-            // 原子操作,增加一个客户端数量
-            Interlocked.Increment(ref totalService.TotalPlayer);
-            */
-
             // 从接受端重用池获取一个新的SocketAsyncEventArgs对象
             PlayerToken playerToken = TokenPool.Pop();
-            playerToken.SetCompleted(ProcessReceive, null);
             playerToken.ServerSocket = e.AcceptSocket;
+
             // 异步回调接收数据
             bool willRaiseEvent = e.AcceptSocket.ReceiveAsync(playerToken.ReceiveEventArgs);
             if (!willRaiseEvent)
@@ -133,30 +130,38 @@ namespace MinecraftTunnel.Core
         }
 
         /// <summary>
+        /// 消息发送回调
+        /// </summary>
+        /// <param name="socketAsync"></param>
+        private void ProcessSend(SocketAsyncEventArgs socketAsync)
+        {
+            PlayerToken playerToken = (PlayerToken)socketAsync.UserToken;
+
+            int count = playerToken.SendEventArgs.BytesTransferred;
+            int offset = playerToken.SendEventArgs.Offset;
+            byte[] buffer = playerToken.SendEventArgs.Buffer;
+            byte[] packet = new byte[count];
+            Array.Copy(buffer, offset, packet, 0, count);
+            OnSend?.Invoke(playerToken, packet);
+        }
+
+        /// <summary>
         /// 消息处理的回调
         /// </summary>
         /// <param name="e">操作对象</param>
         private void ProcessReceive(SocketAsyncEventArgs socketAsync)
         {
             PlayerToken playerToken = (PlayerToken)socketAsync.UserToken;
-
             int offset = playerToken.ReceiveEventArgs.Offset;
             int count = playerToken.ReceiveEventArgs.BytesTransferred;
-            int endOffset = offset + count;
             byte[] Buffer = playerToken.ReceiveEventArgs.Buffer;
-
             // 解析数据包
             if (count > 0 && playerToken.ReceiveEventArgs.SocketError == SocketError.Success)
             {
-                Block block = new Block(Buffer, offset);
-                NormalProtocol baseProtocol = new NormalProtocol();
-                do
-                {
-                    baseProtocol.Analyze(block);
-                    analysisService.Analysis(playerToken, baseProtocol.PacketId, baseProtocol.PacketData);
-                } while (baseProtocol.block.step < endOffset);
-
-                bool willRaiseEvent = playerToken.ServerSocket.ReceiveAsync(playerToken.ReceiveEventArgs); //投递接收请求
+                byte[] packet = new byte[count];
+                Array.Copy(Buffer, offset, packet, 0, count);
+                OnReceive?.Invoke(playerToken, packet);
+                bool willRaiseEvent = playerToken.ServerSocket.ReceiveAsync(playerToken.ReceiveEventArgs);
                 if (!willRaiseEvent)
                     ProcessReceive(playerToken.ReceiveEventArgs);
             }
@@ -168,20 +173,29 @@ namespace MinecraftTunnel.Core
 
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
-            PlayerToken token = e.UserToken as PlayerToken;
+            PlayerToken playerToken = e.UserToken as PlayerToken;
             try
             {
-                token.ServerSocket.Shutdown(SocketShutdown.Send);
-                token.Close();
+                playerToken.ServerSocket.Shutdown(SocketShutdown.Send);
+                playerToken.ServerSocket.Close();
             }
             catch (Exception ex)
             {
                 ILogger.LogError(ex.Message);
             }
-            TokenPool.Push(token);
-            semaphore.Release();
-        }
+            finally
+            {
+                if (playerToken.StartLogin)
+                {
+                    playerToken.StartLogin = false;
+                    playerToken.Compression = false;
+                    playerToken.PlayerName = string.Empty;
+                }
 
+                TokenPool.Push(playerToken);
+                semaphore.Release();
+            }
+        }
         public override void Stop()
         {
             ServerSocket.Shutdown(SocketShutdown.Both);
@@ -191,7 +205,5 @@ namespace MinecraftTunnel.Core
         {
             ServerSocket.Dispose();
         }
-
-
     }
 }

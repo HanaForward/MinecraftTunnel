@@ -2,6 +2,7 @@
 using MinecraftTunnel.Common;
 using MinecraftTunnel.Protocol;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MinecraftTunnel.Service.ProtocolService
@@ -13,34 +14,38 @@ namespace MinecraftTunnel.Service.ProtocolService
         {
             this.Logger = Logger;
         }
-        public async Task AnalysisData(PlayerToken playerToken, int PacketId, byte[] PacketData)
+        public async Task<T> AnalysisData<T>(int PacketId, byte[] PacketData)
         {
-  
+            Block block = new Block(PacketData);
+            return EntityMapper.MapToEntities<T>(block);
         }
 
-        public ProtocolHeand AnalysisHeand(bool Compression, byte[] Packet)
+        public List<ProtocolHeand> AnalysisHeand(bool Compression, byte[] Packet)
         {
             Block block = new Block(Packet);
+            List<ProtocolHeand> protocolHeands = new List<ProtocolHeand>();
+
             ProtocolHeand protocolHeand;
             // 根据玩家的 Compression 标志 来处理数据包
             if (Compression)
             {
-                protocolHeand = new ZipProtocol();
                 do
                 {
+                    protocolHeand = new ZipProtocol();
                     protocolHeand.Analyze(block);
+                    protocolHeands.Add(protocolHeand);
                 } while (protocolHeand.block.step < Packet.Length);
             }
             else
             {
-                protocolHeand = new NormalProtocol();
                 do
                 {
+                    protocolHeand = new NormalProtocol();
                     protocolHeand.Analyze(block);
+                    protocolHeands.Add(protocolHeand);
                 } while (protocolHeand.block.step < Packet.Length);
             }
-            return protocolHeand;
+            return protocolHeands;
         }
-
     }
 }

@@ -178,7 +178,6 @@ namespace MinecraftTunnel.Protocol
             step += Length;
             return data;
         }
-
         public void Dispose()
         {
             buffer = null;

@@ -4,7 +4,8 @@ using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
 using MinecraftTunnel.Core;
 using MinecraftTunnel.Protocol;
-using System;
+using MinecraftTunnel.Service.ProtocolService;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,14 +36,11 @@ namespace MinecraftTunnel.Service
         private readonly IConfiguration Configuration;
         private readonly AnalysisService AnalysisService;
 
-
         public readonly ServerCore ServerCore;
 
-        public delegate void OnPlayerConnet(PlayerToken PlayerToken);
+        public Dictionary<int, IProtocol<object>> ProtocalAction = new Dictionary<int, IProtocol<object>>();
 
-
-
-        public TunnelService(ILogger<LoginService> Logger, IConfiguration Configuration, AnalysisService AnalysisService, ServerCore ServerCore)
+        public TunnelService(ILogger<TunnelService> Logger, IConfiguration Configuration, AnalysisService AnalysisService, ServerCore ServerCore)
         {
             this.Logger = Logger;
             this.Configuration = Configuration;
@@ -51,19 +49,36 @@ namespace MinecraftTunnel.Service
 
             ServerCore.OnReceive += Even_OnReceive;
             ServerCore.OnSend += Even_OnSend;
+
+            LoginService loginService = new LoginService(Logger, Configuration);
+
+            ProtocalAction.Add(0, loginService);
         }
 
         private void Even_OnSend(PlayerToken PlayerToken, byte[] Packet)
         {
-            ProtocolHeand protocolHeand = AnalysisService.AnalysisHeand(Packet);
-            Logger.LogInformation($"OnSend  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , Data : {protocolHeand.PacketData}");
+            List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(PlayerToken.Compression, Packet);
+            foreach (var protocolHeand in protocolHeands)
+            {
+                Logger.LogInformation($"OnSend  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
+            }
         }
 
         private void Even_OnReceive(PlayerToken PlayerToken, byte[] Packet)
         {
+            List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(PlayerToken.Compression, Packet);
 
-            Logger.LogInformation($"OnReceive -> {PacketId} , Size : {PacketData.Length} , Data : {PacketData}");
-            throw new NotImplementedException();
+            foreach (var protocolHeand in protocolHeands)
+            {
+                if (ProtocalAction.TryGetValue(protocolHeand.PacketId, out IProtocol<object> ActionProtocol))
+                {
+                    object model = protocolHeand.PacketData;
+                    if (ActionProtocol.NeedAnalysis)
+                        model = AnalysisService.AnalysisData<object>(protocolHeand.PacketId, protocolHeand.PacketData);
+                    ActionProtocol.Action?.Invoke(PlayerToken, model);
+                }
+                Logger.LogInformation($"OnReceive  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
+            }
         }
 
         public Task StartAsync(CancellationToken cancellationToken)

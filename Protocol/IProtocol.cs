@@ -1,23 +1,13 @@
 ﻿using MinecraftTunnel.Common;
+using System;
 
 namespace MinecraftTunnel.Protocol
 {
-    /// <summary>
-    /// 任何一个传输协议处理过程需要继承
-    /// </summary>
-    public abstract class IProtocol
+    public interface IProtocol<T>
     {
-        /// <summary>
-        /// 解析
-        /// </summary>
-        /// <param name="PacketData"></param>
-        public abstract void Analyze(PlayerToken playerToken, byte[] PacketData);
-        /// <summary>
-        /// 逆解析
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ProtocolModel"></param>
-        /// <returns></returns>
-        // public abstract byte[] Resolve<T>(PlayerToken playerToken, T ProtocolModel);
+        public T Instance { get; set; }
+
+        public bool NeedAnalysis { get; set; }
+        public Action<PlayerToken, T> Action { get; set; }
     }
 }
