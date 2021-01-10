@@ -25,11 +25,6 @@ namespace MinecraftTunnel.Extensions
 
             return result;
         }
-
-        public static void WriteVarInt(this Stream stream, string value, bool longString)
-        { 
-        
-        }
         public static void WriteString(this Stream stream, string value, bool longString)
         {
             byte[] arrayOfByte = Encoding.UTF8.GetBytes(value);

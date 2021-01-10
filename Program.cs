@@ -1,10 +1,8 @@
-﻿using log4net;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Core;
-using MinecraftTunnel.Model;
 using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Service;
 using MinecraftTunnel.Service.ProtocolService;
@@ -18,22 +16,6 @@ namespace MinecraftTunnel
     public class Program
     {
         private static IHost host;
-        public static readonly ILog log = LogManager.GetLogger("MinecraftTunnel");
-
-
-
-
-        public static ushort MaxConnections;
-        public static bool WhiteList;
-        public static ConnectConfig ServerConfig;
-        public static ConnectConfig NatConfig;
-        public static QueryConfig QueryConfig;
-        public static string NoFind;
-        public static string IsEnd;
-        public static string ConnectionString;
-
-
-
         public static IConfigurationRoot Configuration { get; set; }
         public static void Main(string[] args)
         {
@@ -53,8 +35,13 @@ namespace MinecraftTunnel
              Host.CreateDefaultBuilder(args)
                  .ConfigureServices((hostContext, services) =>
                  {
+
+                     services.AddSingleton<LoginService>();
+
                      services.AddHostedService<TunnelService>();
                      services.AddSingleton<ServerCore>();
+
+
                      services.AddSingleton(o =>
                      {
                          return new TotalService();

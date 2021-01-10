@@ -36,7 +36,7 @@ namespace MinecraftTunnel
         private MySqlConnection CreateConnection()
         {
             MySqlConnection result = null;
-            result = new MySqlConnection(Program.ConnectionString);
+            // result = new MySqlConnection(Program.ConnectionString);
             return result;
         }
     }

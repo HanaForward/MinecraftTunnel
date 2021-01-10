@@ -5,6 +5,7 @@ using MinecraftTunnel.Common;
 using MinecraftTunnel.Core;
 using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Service.ProtocolService;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,9 +39,10 @@ namespace MinecraftTunnel.Service
 
         public readonly ServerCore ServerCore;
 
+        private Dictionary<int, Type> Collections = new Dictionary<int, Type>();
         public Dictionary<int, IProtocol<object>> ProtocalAction = new Dictionary<int, IProtocol<object>>();
 
-        public TunnelService(ILogger<TunnelService> Logger, IConfiguration Configuration, AnalysisService AnalysisService, ServerCore ServerCore)
+        public TunnelService(IServiceProvider ServiceProvider, ILogger<TunnelService> Logger, IConfiguration Configuration, AnalysisService AnalysisService, ServerCore ServerCore)
         {
             this.Logger = Logger;
             this.Configuration = Configuration;
@@ -50,9 +52,16 @@ namespace MinecraftTunnel.Service
             ServerCore.OnReceive += Even_OnReceive;
             ServerCore.OnSend += Even_OnSend;
 
-            LoginService loginService = new LoginService(Logger, Configuration);
 
-            ProtocalAction.Add(0, loginService);
+            Collections.Add(0,typeof(LoginService));
+
+            foreach (var item in Collections)
+            {
+                Type type = item.Value;
+                ProtocalAction.Add(item.Key, (IProtocol<object>)ServiceProvider.GetService(type));
+            }
+
+
         }
 
         private void Even_OnSend(PlayerToken PlayerToken, byte[] Packet)

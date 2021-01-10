@@ -17,7 +17,7 @@ namespace MinecraftTunnel.Common
         public bool Compression;
         public string PlayerName;                            // 玩家Name
         public int ProtocolVersion;
-
+        public bool IsForge;
 
         public DateTime ConnectDateTime;                     // 连接时间
         public DateTime EndTime;                             // 到期时间
@@ -32,7 +32,7 @@ namespace MinecraftTunnel.Common
 
             SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.UserToken = this;
-          
+
         }
 
         public void Close()
@@ -46,6 +46,11 @@ namespace MinecraftTunnel.Common
             {
 
             }
+        }
+
+        public void Login()
+        {
+            throw new NotImplementedException();
         }
     }
 }
