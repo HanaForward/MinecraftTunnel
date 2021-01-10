@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MinecraftTunnel.Core;
+using System;
 using System.Net.Sockets;
 
 namespace MinecraftTunnel.Common
@@ -6,6 +7,7 @@ namespace MinecraftTunnel.Common
     public class PlayerToken
     {
         public Socket ServerSocket;
+       
 
         public SocketAsyncEventArgs ReceiveEventArgs;
         public SocketAsyncEventArgs SendEventArgs;
@@ -16,16 +18,13 @@ namespace MinecraftTunnel.Common
         protected byte[] ReceiveBuffer;
         public string PlayerName;                            // 玩家Name
 
-        public void Tunnel()
-        {
-
-
-        }
 
         public DateTime ConnectDateTime;                     // 连接时间
         public DateTime EndTime;                             // 到期时间
         public bool StartLogin;
-        internal int ProtocolVersion;
+        public int ProtocolVersion;
+        public bool IsForge;
+        internal bool Compression;
 
         public PlayerToken()
         {
@@ -69,19 +68,20 @@ namespace MinecraftTunnel.Common
 
         public void Close()
         {
-            /*
-                    Interlocked.Decrement(ref ConnectedSockets);
-                    if (null == token.IO_Completed)
-                    {
-                        token.SetComplete(IO_Completed);
-                        token.Completed();
-                    }
-                    if (token.PlayerName != null)
-                    {
-                        Online.Remove(token.PlayerName);
-                        token.PlayerName = null;
-                    }
-                    */
+            try
+            {
+                ServerSocket.Shutdown(SocketShutdown.Send);
+                ServerSocket.Close();
+            }
+            catch (Exception)
+            {
+
+            }
+            if (StartLogin)
+            {
+                StartLogin = false;
+                PlayerName = string.Empty;
+            }
         }
     }
 }

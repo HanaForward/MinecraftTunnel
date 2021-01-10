@@ -1,4 +1,5 @@
 ﻿using MinecraftTunnel.Extensions;
+using System;
 
 namespace MinecraftTunnel.Protocol.ServerBound
 {
@@ -21,7 +22,12 @@ namespace MinecraftTunnel.Protocol.ServerBound
         /// </summary>
         public VarInt nextState { get; set; }
 
-        public NextState NextState;
+
+
+        public NextState NextState()
+        {
+            return (NextState)(int)nextState;
+        }
 
         public int PacketId = 0;
 

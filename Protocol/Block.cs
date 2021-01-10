@@ -17,13 +17,6 @@ namespace MinecraftTunnel.Protocol
             this.buffer = buffer;
             this.step = step;
         }
-        public byte[] readData(int Length)
-        {
-            byte[] data = new byte[Length];
-            Array.Copy(buffer, step, data, 0, Length);
-            step += Length;
-            return data;
-        }
         public bool readBoolean()
         {
             if (step >= buffer.Length)
@@ -171,6 +164,21 @@ namespace MinecraftTunnel.Protocol
 
             return result;
         }
+        public byte[] readPacket()
+        {
+            int lenght = buffer.Length - step;
+            byte[] vs = new byte[lenght];
+            Array.Copy(buffer, step, vs, 0, lenght);
+            return vs;
+        }
+        public byte[] readPacket(int Length)
+        {
+            byte[] data = new byte[Length];
+            Array.Copy(buffer, step, data, 0, Length);
+            step += Length;
+            return data;
+        }
+
         public void Dispose()
         {
             buffer = null;

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MinecraftTunnel.Common;
 using MinecraftTunnel.Core;
 using MinecraftTunnel.Model;
 using MinecraftTunnel.Protocol;
@@ -52,11 +53,9 @@ namespace MinecraftTunnel
              Host.CreateDefaultBuilder(args)
                  .ConfigureServices((hostContext, services) =>
                  {
+                     services.AddSingleton<LoginProtocol>();
                      services.AddHostedService<LoginService>();
-                     services.AddScoped<ServerCore>();
-
-
-
+                     services.AddSingleton<ServerCore>();
                      services.AddSingleton(o =>
                      {
                          return new TotalService();
@@ -64,7 +63,7 @@ namespace MinecraftTunnel
                      services.AddSingleton(o =>
                      {
                          var log = (ILogger<AnalysisService>)o.GetService(typeof(ILogger<AnalysisService>));
-                         return new AnalysisService(log);
+                         return new AnalysisService(o,log);
                      });
                  })
                  .ConfigureAppConfiguration((hostContext, configApp) =>

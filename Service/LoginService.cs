@@ -26,8 +26,7 @@ namespace MinecraftTunnel.Service
         public Task StartAsync(CancellationToken cancellationToken)
         {
             ServerConfig = IConfiguration.GetSection("Server").Get<ServerConfig>();
-            ServerCore.Bind(ServerConfig.IP, ServerConfig.Port);
-            ServerCore.Start();
+            ServerCore.Start(ServerConfig.IP, ServerConfig.Port);
 
 
             return Task.CompletedTask;

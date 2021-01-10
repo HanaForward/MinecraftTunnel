@@ -1,11 +1,36 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 
 namespace MinecraftTunnel.Extensions
 {
     public static class StreamConver
     {
-        public static void WriteString(this Stream stream, string value,bool longString)
+        public static int ReadVarInt(this Stream stream)
+        {
+            int numRead = 0;
+            int result = 0;
+            sbyte read;
+            do
+            {
+                read = (sbyte)stream.ReadByte();
+                int value = read & 0b01111111;
+                result |= (value << (7 * numRead));
+                numRead++;
+                if (numRead > 5)
+                {
+                    throw new Exception("VarInt is too big");
+                }
+            } while ((read & 0b10000000) != 0);
+
+            return result;
+        }
+
+        public static void WriteVarInt(this Stream stream, string value, bool longString)
+        { 
+        
+        }
+        public static void WriteString(this Stream stream, string value, bool longString)
         {
             byte[] arrayOfByte = Encoding.UTF8.GetBytes(value);
             int Length = arrayOfByte.Length;
@@ -13,7 +38,7 @@ namespace MinecraftTunnel.Extensions
                 WriteInt(stream, Length);
             stream.Write(arrayOfByte, 0, arrayOfByte.Length);
         }
-        public static void WriteInt(this Stream stream,int value)
+        public static void WriteInt(this Stream stream, int value)
         {
             do
             {

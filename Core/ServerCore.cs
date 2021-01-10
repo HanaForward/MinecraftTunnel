@@ -26,6 +26,18 @@ namespace MinecraftTunnel.Core
         private Socket ServerSocket;                                    // Socket
         private TokenPool TokenPool;                                    // 连接池
 
+        public ClientCore ClientCore;
+
+        public Action<PlayerToken, byte[]> OnReceive { get; internal set; }
+        public Action<PlayerToken, byte[]> OnSend { get; internal set; }
+
+        public void Tunnel(PlayerToken playerToken, string iP, ushort port)
+        {
+            ClientCore = new ClientCore(playerToken);
+            ClientCore.Start(iP, port);
+        }
+
+
         public ServerCore(ILogger<ServerCore> ILogger, IConfiguration IConfiguration, TotalService totalService, AnalysisService analysisService)
         {
             this.ILogger = ILogger;
@@ -45,20 +57,18 @@ namespace MinecraftTunnel.Core
             }
         }
 
-        public void Bind(string ip, ushort port)
+        public override void Start(string IP, int Port)
         {
-            IPAddress iPAddress = IPAddress.Parse(ip);
-            IPEndPoint serverIP = new IPEndPoint(iPAddress, port);
+            IPAddress iPAddress = IPAddress.Parse(IP);
+            IPEndPoint serverIP = new IPEndPoint(iPAddress, Port);
             ServerSocket.Bind(serverIP);
             ServerSocket.NoDelay = true;
-        }
 
-        public override void Start()
-        {
             semaphore = new Semaphore(MaxConnections, MaxConnections + 1);
             ServerSocket.Listen(100);
             StartAccept(null);
         }
+
 
         /// <summary>
         /// accept 异步回调
@@ -181,5 +191,7 @@ namespace MinecraftTunnel.Core
         {
             ServerSocket.Dispose();
         }
+
+
     }
 }

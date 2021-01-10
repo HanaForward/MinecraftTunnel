@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
 using MinecraftTunnel.Protocol;
-using MinecraftTunnel.Protocol.ServerBound;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,14 +12,11 @@ namespace MinecraftTunnel.Service
     {
         private readonly ILogger ILogger;
         private readonly Dictionary<int, Action<PlayerToken, byte[]>> AnalysisFun = new Dictionary<int, Action<PlayerToken, byte[]>>();
-        public AnalysisService(ILogger<AnalysisService> ILogger)
+        public AnalysisService(IServiceProvider serviceProvider, ILogger<AnalysisService> ILogger)
         {
             this.ILogger = ILogger;
-
-            LoginProtocol loginProtocol = new LoginProtocol();
-
-            AnalysisFun.Add(0, loginProtocol.Analyze);
-
+            IProtocol protocol = serviceProvider.GetService<LoginProtocol>();
+            AnalysisFun.Add(0, protocol.Analyze);
         }
 
         public Task Analysis(PlayerToken playerToken, int PacketId, byte[] PacketData)
@@ -31,5 +28,6 @@ namespace MinecraftTunnel.Service
             }
             return Task.CompletedTask;
         }
+
     }
 }
