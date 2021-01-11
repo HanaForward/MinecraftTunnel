@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
+using MinecraftTunnel.Service;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -10,16 +11,19 @@ namespace MinecraftTunnel.Core
 {
     public class ServerCore : TunnelCore
     {
-        private readonly ILogger ILogger;                               // 日志
-        private readonly IConfiguration IConfiguration;                 // 配置文件
-        private Semaphore semaphore;                                    // 信号量 控制最大连接数
+        public readonly ILogger ILogger;                               // 日志
+        public readonly IConfiguration IConfiguration;                 // 配置文件
 
+        private Semaphore semaphore;                                    // 信号量 控制最大连接数
         private ushort MaxConnections;                                  // 最大连接数
         private Socket ServerSocket;                                    // Socket
         private TokenPool TokenPool;                                    // 连接池
 
-        public Action<PlayerToken, byte[]> OnReceive { get; set; }
-        public Action<PlayerToken, byte[]> OnSend { get; set; }
+        #region 事件
+        public static ServerReceive OnServerReceive;
+        public static ServerSend OnServerSend;
+        public static OnClose OnClose;
+        #endregion
 
         public ServerCore(ILogger<ServerCore> ILogger, IConfiguration IConfiguration)
         {
@@ -51,7 +55,6 @@ namespace MinecraftTunnel.Core
             ServerSocket.Listen(100);
             StartAccept(null);
         }
-
         /// <summary>
         /// 每当套接字上完成接收或发送操作时，都会调用此方法。
         /// </summary>
@@ -71,7 +74,6 @@ namespace MinecraftTunnel.Core
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
         }
-
         /// <summary>
         /// accept 异步回调
         /// </summary>
@@ -98,7 +100,6 @@ namespace MinecraftTunnel.Core
                 ProcessAccept(acceptEventArg);
             }
         }
-
         /// <summary>
         /// AcceptAsync回调方法
         /// </summary>
@@ -108,7 +109,6 @@ namespace MinecraftTunnel.Core
         {
             ProcessAccept(socketAsync);
         }
-
         /// <summary>
         /// 当Accept完成时回调的方法
         /// </summary>
@@ -128,7 +128,6 @@ namespace MinecraftTunnel.Core
             // 接受后面的连接请求
             StartAccept(e);
         }
-
         /// <summary>
         /// 消息发送回调
         /// </summary>
@@ -142,9 +141,8 @@ namespace MinecraftTunnel.Core
             byte[] buffer = playerToken.SendEventArgs.Buffer;
             byte[] packet = new byte[count];
             Array.Copy(buffer, offset, packet, 0, count);
-            OnSend?.Invoke(playerToken, packet);
+            OnServerSend?.Invoke(playerToken, packet);
         }
-
         /// <summary>
         /// 消息处理的回调
         /// </summary>
@@ -160,41 +158,21 @@ namespace MinecraftTunnel.Core
             {
                 byte[] packet = new byte[count];
                 Array.Copy(Buffer, offset, packet, 0, count);
-                OnReceive?.Invoke(playerToken, packet);
+                OnServerReceive?.Invoke(playerToken, packet);
                 bool willRaiseEvent = playerToken.ServerSocket.ReceiveAsync(playerToken.ReceiveEventArgs);
                 if (!willRaiseEvent)
                     ProcessReceive(playerToken.ReceiveEventArgs);
             }
             else
             {
-                CloseClientSocket(socketAsync);
+                CloseClientSocket(playerToken);
             }
         }
-
-        private void CloseClientSocket(SocketAsyncEventArgs e)
+        private void CloseClientSocket(PlayerToken playerToken)
         {
-            PlayerToken playerToken = e.UserToken as PlayerToken;
-            try
-            {
-                playerToken.ServerSocket.Shutdown(SocketShutdown.Send);
-                playerToken.ServerSocket.Close();
-            }
-            catch (Exception ex)
-            {
-                ILogger.LogError(ex.Message);
-            }
-            finally
-            {
-                if (playerToken.StartLogin)
-                {
-                    playerToken.StartLogin = false;
-                    playerToken.Compression = false;
-                    playerToken.PlayerName = string.Empty;
-                }
-
-                TokenPool.Push(playerToken);
-                semaphore.Release();
-            }
+            OnClose.Invoke(playerToken);
+            TokenPool.Push(playerToken);
+            semaphore.Release();
         }
         public override void Stop()
         {

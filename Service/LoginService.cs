@@ -72,7 +72,6 @@ namespace MinecraftTunnel.Service
                     }
                     playerToken.StartLogin = true;
                 }
-
             }
             catch (Exception ex)
             {

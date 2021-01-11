@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MinecraftTunnel.Core;
+using System;
 using System.Net.Sockets;
 
 namespace MinecraftTunnel.Common
@@ -7,6 +8,9 @@ namespace MinecraftTunnel.Common
     {
         public Socket ServerSocket;
         public Socket ClientSocket;
+
+        public ServerCore ServerCore;
+        public ClientCore ClientCore;
 
         public SocketAsyncEventArgs ReceiveEventArgs;
         public SocketAsyncEventArgs SendEventArgs;
@@ -22,7 +26,6 @@ namespace MinecraftTunnel.Common
         public DateTime ConnectDateTime;                     // 连接时间
         public DateTime EndTime;                             // 到期时间
 
-
         public PlayerToken()
         {
             ReceiveBuffer = new byte[ushort.MaxValue];
@@ -32,25 +35,25 @@ namespace MinecraftTunnel.Common
 
             SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.UserToken = this;
-
         }
 
-        public void Close()
+        public void StartTunnel()
         {
-            try
-            {
-                ServerSocket.Shutdown(SocketShutdown.Both);
-                ServerSocket.Close();
-            }
-            catch (Exception)
-            {
-
-            }
+            ClientCore = new ClientCore(ServerCore.ILogger, ServerCore.IConfiguration);
+            ClientCore.Start(this);
         }
 
-        public void Login()
+        public void CloseServer()
         {
-            throw new NotImplementedException();
+            ServerCore.Stop();
+            ServerSocket = null;
+            ServerCore = null;
+        }
+        public void CloseClient()
+        {
+            ClientCore.Stop();
+            ClientSocket = null;
+            ClientCore = null;
         }
     }
 }
