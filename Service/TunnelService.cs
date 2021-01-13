@@ -60,8 +60,6 @@ namespace MinecraftTunnel.Service
                 Type type = item.Value;
                 ProtocalAction.Add(item.Key, (IProtocol<object>)ServiceProvider.GetService(type));
             }
-
-
         }
 
         private void Even_OnSend(PlayerToken PlayerToken, byte[] Packet)
