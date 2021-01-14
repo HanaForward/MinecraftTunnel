@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
@@ -13,6 +14,16 @@ using System.Threading.Tasks;
 
 namespace MinecraftTunnel.Service
 {
+    /// <summary>
+    ///  当玩家进入隧道
+    /// </summary>
+    /// <param name="PlayerToken"></param>
+    public delegate void PlayerJoin(PlayerToken PlayerToken);
+    /// <summary>
+    /// 当玩家断开连接
+    /// </summary>
+    /// <param name="playerToken">连接标识</param>
+    public delegate void PlayerLeave(PlayerToken playerToken);
     /// <summary>
     /// 当服务器接受到玩家数据包
     /// </summary>
@@ -37,16 +48,13 @@ namespace MinecraftTunnel.Service
     /// <param name="playerToken"></param>
     /// <param name="Packet"></param>
     public delegate void TunnelSend(PlayerToken playerToken, byte[] Packet);
-    /// <summary>
-    /// 当玩家断开连接
-    /// </summary>
-    /// <param name="playerToken">连接标识</param>
-    public delegate void OnClose(PlayerToken playerToken);
 
     public class TunnelService : IHostedService
     {
         private readonly ILogger Logger;
         private readonly IConfiguration Configuration;
+        private readonly IServiceProvider ServiceProvider;
+
         private readonly AnalysisService AnalysisService;
 
         public readonly ServerCore ServerCore;
@@ -56,6 +64,7 @@ namespace MinecraftTunnel.Service
 
         public TunnelService(IServiceProvider ServiceProvider, ILogger<TunnelService> Logger, IConfiguration Configuration, AnalysisService AnalysisService, ServerCore ServerCore)
         {
+            this.ServiceProvider = ServiceProvider;
             this.Logger = Logger;
             this.Configuration = Configuration;
             this.AnalysisService = AnalysisService;
@@ -70,7 +79,7 @@ namespace MinecraftTunnel.Service
             ClientCore.OnTunnelSend += Even_OnTunnelSend;
 
             Collections.Add(0, typeof(LoginService));
-            Collections.Add(3, typeof(CompressionService));
+            // Collections.Add(3, typeof(CompressionService));
 
             foreach (var item in Collections)
             {
@@ -79,10 +88,6 @@ namespace MinecraftTunnel.Service
             }
         }
 
-        /// <summary>
-        /// 连接断开
-        /// </summary>
-        /// <param name="playerToken"></param>
         private void Even_OnClose(PlayerToken playerToken)
         {
             if (playerToken.ServerCore != null)
@@ -93,12 +98,6 @@ namespace MinecraftTunnel.Service
             {
                 playerToken.CloseClient();
             }
-            if (playerToken.StartLogin)
-            {
-                playerToken.PlayerName = string.Empty;
-                playerToken.Compression = false;
-            }
-            playerToken.IsForge = false;
         }
         private void Even_OnServerSend(PlayerToken PlayerToken, byte[] Packet)
         {
@@ -110,7 +109,7 @@ namespace MinecraftTunnel.Service
         }
         private void Even_OnServerReceive(PlayerToken playerToken, byte[] Packet)
         {
-            playerToken.ClientCore.SendAsync(Packet);
+            //  playerToken.ClientCore.SendAsync(Packet);
             List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(playerToken.Compression, Packet);
             foreach (var protocolHeand in protocolHeands)
             {
@@ -126,16 +125,19 @@ namespace MinecraftTunnel.Service
         }
         private void Even_TunnelReceive(PlayerToken playerToken, byte[] Packet)
         {
-            playerToken.ServerCore.SendAsync(Packet);
+            playerToken.ServerCore.SendPacket(Packet);
             Logger.LogInformation($"TunnelReceive  ->  Length : {Packet.Length}");
         }
         private void Even_OnTunnelSend(PlayerToken playerToken, byte[] Packet)
         {
             Logger.LogInformation($"TunnelSend  ->  Length : {Packet.Length}");
         }
+
+
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            ServerCore.Start(Configuration["Server:IP"], Configuration.GetValue<int>("Server:Port"));
+            ServerListen serverListen = ServiceProvider.GetService<ServerListen>();
+            serverListen.Listen();
             return Task.CompletedTask;
         }
         public Task StopAsync(CancellationToken cancellationToken)

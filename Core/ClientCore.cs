@@ -8,13 +8,11 @@ using System.Net.Sockets;
 
 namespace MinecraftTunnel.Core
 {
-    public class ClientCore : IDisposable
+    public class ClientCore : IServerCore, IDisposable
     {
         public readonly ILogger Logger;                               // 日志
         public readonly IConfiguration Configuration;                 // 配置文件
-        public Socket ClientSocket;                                   // Socket
-
-
+        public Socket Socket;                                   // Socket
         public SocketAsyncEventArgs SendEventArgs;
         private SocketAsyncEventArgs receiveSocketAsyncEventArgs;
         private byte[] ReceiveBuffer = new byte[ushort.MaxValue];
@@ -23,13 +21,19 @@ namespace MinecraftTunnel.Core
         #region 事件
         public static TunnelReceive OnTunnelReceive;
         public static TunnelSend OnTunnelSend;
-        public static OnClose OnClose;
+        public static PlayerLeave OnClose;
         #endregion
 
         public ClientCore(ILogger Logger, IConfiguration Configuration)
         {
             this.Logger = Logger;
             this.Configuration = Configuration;
+        }
+
+        public void SendPacket(byte[] Packet)
+        {
+            SendEventArgs.SetBuffer(Packet);
+            Socket.SendAsync(SendEventArgs);
         }
         public void Start(PlayerToken PlayerToken)
         {
@@ -45,7 +49,7 @@ namespace MinecraftTunnel.Core
             }
 
             IPEndPoint localEndPoint = new IPEndPoint(ipaddr, Configuration.GetValue<int>("Nat:Port"));
-            ClientSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+            Socket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
             {
                 NoDelay = true
             };
@@ -57,7 +61,7 @@ namespace MinecraftTunnel.Core
             connSocketAsyncEventArgs.Completed += IO_Completed;
 
 
-            if (!ClientSocket.ConnectAsync(connSocketAsyncEventArgs))
+            if (!Socket.ConnectAsync(connSocketAsyncEventArgs))
             {
                 ProcessConnect(connSocketAsyncEventArgs);
             }
@@ -112,7 +116,7 @@ namespace MinecraftTunnel.Core
                 receiveSocketAsyncEventArgs = new SocketAsyncEventArgs();
                 receiveSocketAsyncEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
                 receiveSocketAsyncEventArgs.Completed += IO_Completed;
-                if (!ClientSocket.ReceiveAsync(receiveSocketAsyncEventArgs))
+                if (!Socket.ReceiveAsync(receiveSocketAsyncEventArgs))
                 {
                     ProcessReceive(receiveSocketAsyncEventArgs);
                 }
@@ -130,12 +134,12 @@ namespace MinecraftTunnel.Core
         }
         public void Stop()
         {
-            ClientSocket.Shutdown(SocketShutdown.Both);
-            ClientSocket.Close();
+            Socket.Shutdown(SocketShutdown.Both);
+            Socket.Close();
         }
         public void Dispose()
         {
-            ClientSocket.Dispose();
+            Socket.Dispose();
         }
     }
 }

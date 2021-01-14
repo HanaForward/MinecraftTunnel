@@ -3,22 +3,13 @@ using MinecraftTunnel.Extensions;
 using MinecraftTunnel.Protocol.ServerBound;
 using System;
 using System.IO;
-using System.Net.Sockets;
 
 namespace MinecraftTunnel.Common
 {
     public class PlayerToken
     {
-        public Socket ServerSocket;
-        public Socket ClientSocket;
-
         public ServerCore ServerCore;
         public ClientCore ClientCore;
-
-        public SocketAsyncEventArgs ReceiveEventArgs;
-        public SocketAsyncEventArgs SendEventArgs;
-
-        protected byte[] ReceiveBuffer;
 
         public bool StartLogin;
         public bool Compression;
@@ -29,18 +20,6 @@ namespace MinecraftTunnel.Common
 
         public DateTime ConnectDateTime;                     // 连接时间
         public DateTime EndTime;                             // 到期时间
-
-
-        public PlayerToken()
-        {
-            ReceiveBuffer = new byte[ushort.MaxValue];
-            ReceiveEventArgs = new SocketAsyncEventArgs();
-            ReceiveEventArgs.UserToken = this;
-            ReceiveEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
-
-            SendEventArgs = new SocketAsyncEventArgs();
-            SendEventArgs.UserToken = this;
-        }
 
         public void StartTunnel()
         {
@@ -64,7 +43,7 @@ namespace MinecraftTunnel.Common
                 memoryStream.WriteInt(size);
                 byte[] buffer = new byte[size];
                 Array.Copy(memoryStream.GetBuffer(), 0, buffer, 0, size);
-                ClientCore.ClientSocket.Send(buffer);
+                ClientCore.Socket.Send(buffer);
             }
 
             using (MemoryStream memoryStream = new MemoryStream())
@@ -80,7 +59,7 @@ namespace MinecraftTunnel.Common
                 memoryStream.WriteInt(size);
                 byte[] buffer = new byte[size];
                 Array.Copy(memoryStream.GetBuffer(), 0, buffer, 0, size);
-                ClientCore.ClientSocket.Send(buffer);
+                ClientCore.Socket.Send(buffer);
             }
 
         }
@@ -88,13 +67,11 @@ namespace MinecraftTunnel.Common
         public void CloseServer()
         {
             ServerCore.Stop();
-            ServerSocket = null;
             ServerCore = null;
         }
         public void CloseClient()
         {
             ClientCore.Stop();
-            ClientSocket = null;
             ClientCore = null;
         }
     }

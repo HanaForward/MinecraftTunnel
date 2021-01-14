@@ -18,7 +18,7 @@ namespace MinecraftTunnel.Service
         private readonly TotalService TotalService;
         private readonly IConfiguration Configuration;
 
-        public LoginService(ILogger<LoginService> Logger, IConfigurationRoot Configuration, TotalService TotalService)
+        public LoginService(ILogger<LoginService> Logger, IConfiguration Configuration, TotalService TotalService)
         {
             this.Logger = Logger;
             this.Configuration = Configuration;
@@ -50,11 +50,9 @@ namespace MinecraftTunnel.Service
                         {
                             memoryStream.WriteInt(packet.Length);
                             memoryStream.Write(packet);
-                            playerToken.SendEventArgs.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
-                            playerToken.ServerSocket.SendAsync(playerToken.SendEventArgs);
+                            playerToken.ServerCore.SendPacket(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
                         }
                     }
-                    playerToken.ServerSocket.SendAsync(playerToken.SendEventArgs);
                     return;
                 }
                 byte[] buffer = (byte[])obj;
