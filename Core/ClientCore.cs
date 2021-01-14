@@ -8,7 +8,7 @@ using System.Net.Sockets;
 
 namespace MinecraftTunnel.Core
 {
-    public class ClientCore : IServerCore, IDisposable
+    public class ClientCore
     {
         public readonly ILogger Logger;                               // 日志
         public readonly IConfiguration Configuration;                 // 配置文件
@@ -136,10 +136,6 @@ namespace MinecraftTunnel.Core
         {
             Socket.Shutdown(SocketShutdown.Both);
             Socket.Close();
-        }
-        public void Dispose()
-        {
-            Socket.Dispose();
         }
     }
 }
