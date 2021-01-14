@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace MinecraftTunnel.Service
+﻿namespace MinecraftTunnel.Service
 {
     public class TotalService
     {

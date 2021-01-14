@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
 using MinecraftTunnel.Extensions;
 using MinecraftTunnel.Protocol;
@@ -15,10 +16,12 @@ namespace MinecraftTunnel.Service
     {
         private readonly ILogger Logger;
         private readonly TotalService TotalService;
+        private readonly IConfiguration Configuration;
 
-        public LoginService(ILogger<LoginService> Logger, TotalService TotalService)
+        public LoginService(ILogger<LoginService> Logger, IConfiguration Configuration, TotalService TotalService)
         {
             this.Logger = Logger;
+            this.Configuration = Configuration;
             this.TotalService = TotalService;
             this.Action = Auth;
         }
@@ -47,19 +50,19 @@ namespace MinecraftTunnel.Service
                         {
                             memoryStream.WriteInt(packet.Length);
                             memoryStream.Write(packet);
-                            playerToken.SendEventArgs.SetBuffer(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
-                            playerToken.ServerSocket.SendAsync(playerToken.SendEventArgs);
+                            playerToken.ServerCore.SendPacket(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
                         }
                     }
-                    playerToken.ServerSocket.SendAsync(playerToken.SendEventArgs);
                     return;
                 }
                 byte[] buffer = (byte[])obj;
                 Block block = new Block(buffer);
                 if (playerToken.StartLogin)
                 {
+                    playerToken.StartTunnel();
                     playerToken.PlayerName = block.readString();
-                    playerToken.Login();
+                    ushort.TryParse(Configuration["ServerAddress"], out ushort ServerPort);
+                    // playerToken.Login(Configuration["Query:ServerAddress"], 25565);
                     return;
                 }
                 Handshake handshake = EntityMapper.MapToEntities<Handshake>(block);
@@ -72,7 +75,6 @@ namespace MinecraftTunnel.Service
                     }
                     playerToken.StartLogin = true;
                 }
-
             }
             catch (Exception ex)
             {
