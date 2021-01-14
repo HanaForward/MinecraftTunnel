@@ -19,12 +19,6 @@ namespace MinecraftTunnel
         public static IConfigurationRoot Configuration { get; set; }
         public static void Main(string[] args)
         {
-            Block block = new Block(new byte[10]);
-            var readString = typeof(Block).GetMethod("readInt", BindingFlags.Instance | BindingFlags.Public);
-            readString.Invoke(block, null);
-
-
-
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             host = CreateHostBuilder(args).Build();
             host.Run();
@@ -37,6 +31,7 @@ namespace MinecraftTunnel
                  {
 
                      services.AddSingleton<LoginService>();
+                     services.AddSingleton<CompressionService>();
 
                      services.AddHostedService<TunnelService>();
                      services.AddSingleton<ServerCore>();

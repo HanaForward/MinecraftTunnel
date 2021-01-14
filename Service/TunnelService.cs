@@ -70,6 +70,7 @@ namespace MinecraftTunnel.Service
             ClientCore.OnTunnelSend += Even_OnTunnelSend;
 
             Collections.Add(0, typeof(LoginService));
+            Collections.Add(3, typeof(CompressionService));
 
             foreach (var item in Collections)
             {
@@ -92,6 +93,12 @@ namespace MinecraftTunnel.Service
             {
                 playerToken.CloseClient();
             }
+            if (playerToken.StartLogin)
+            {
+                playerToken.PlayerName = string.Empty;
+                playerToken.Compression = false;
+            }
+            playerToken.IsForge = false;
         }
         private void Even_OnServerSend(PlayerToken PlayerToken, byte[] Packet)
         {
@@ -101,9 +108,10 @@ namespace MinecraftTunnel.Service
                 Logger.LogInformation($"ServerSend  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
             }
         }
-        private void Even_OnServerReceive(PlayerToken PlayerToken, byte[] Packet)
+        private void Even_OnServerReceive(PlayerToken playerToken, byte[] Packet)
         {
-            List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(PlayerToken.Compression, Packet);
+            playerToken.ClientCore.SendAsync(Packet);
+            List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(playerToken.Compression, Packet);
             foreach (var protocolHeand in protocolHeands)
             {
                 if (ProtocalAction.TryGetValue(protocolHeand.PacketId, out IProtocol<object> ActionProtocol))
@@ -111,13 +119,14 @@ namespace MinecraftTunnel.Service
                     object model = protocolHeand.PacketData;
                     if (ActionProtocol.NeedAnalysis)
                         model = AnalysisService.AnalysisData<object>(protocolHeand.PacketId, protocolHeand.PacketData);
-                    ActionProtocol.Action?.Invoke(PlayerToken, model);
+                    ActionProtocol.Action?.Invoke(playerToken, model);
                 }
                 Logger.LogInformation($"ServerReceive  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
             }
         }
         private void Even_TunnelReceive(PlayerToken playerToken, byte[] Packet)
         {
+            playerToken.ServerCore.SendAsync(Packet);
             Logger.LogInformation($"TunnelReceive  ->  Length : {Packet.Length}");
         }
         private void Even_OnTunnelSend(PlayerToken playerToken, byte[] Packet)

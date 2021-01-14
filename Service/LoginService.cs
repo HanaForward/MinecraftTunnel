@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
 using MinecraftTunnel.Extensions;
 using MinecraftTunnel.Protocol;
@@ -15,10 +16,12 @@ namespace MinecraftTunnel.Service
     {
         private readonly ILogger Logger;
         private readonly TotalService TotalService;
+        private readonly IConfiguration Configuration;
 
-        public LoginService(ILogger<LoginService> Logger, TotalService TotalService)
+        public LoginService(ILogger<LoginService> Logger, IConfigurationRoot Configuration, TotalService TotalService)
         {
             this.Logger = Logger;
+            this.Configuration = Configuration;
             this.TotalService = TotalService;
             this.Action = Auth;
         }
@@ -58,8 +61,10 @@ namespace MinecraftTunnel.Service
                 Block block = new Block(buffer);
                 if (playerToken.StartLogin)
                 {
+                    playerToken.StartTunnel();
                     playerToken.PlayerName = block.readString();
-                    playerToken.Login();
+                    ushort.TryParse(Configuration["ServerAddress"], out ushort ServerPort);
+                    playerToken.Login(Configuration["ServerAddress"], ServerPort);
                     return;
                 }
                 Handshake handshake = EntityMapper.MapToEntities<Handshake>(block);

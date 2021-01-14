@@ -12,15 +12,20 @@ namespace MinecraftTunnel.Core
     {
         public readonly ILogger Logger;                               // 日志
         public readonly IConfiguration Configuration;                 // 配置文件
-        private Socket ClientSocket;                                   // Socket
+        public Socket ClientSocket;                                   // Socket
+
+
+        public SocketAsyncEventArgs SendEventArgs;
         private SocketAsyncEventArgs receiveSocketAsyncEventArgs;
         private byte[] ReceiveBuffer = new byte[ushort.MaxValue];
         private PlayerToken PlayerToken;
+
         #region 事件
         public static TunnelReceive OnTunnelReceive;
         public static TunnelSend OnTunnelSend;
         public static OnClose OnClose;
         #endregion
+
         public ClientCore(ILogger Logger, IConfiguration Configuration)
         {
             this.Logger = Logger;
@@ -40,12 +45,17 @@ namespace MinecraftTunnel.Core
             }
 
             IPEndPoint localEndPoint = new IPEndPoint(ipaddr, Configuration.GetValue<int>("Nat:Port"));
-            ClientSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            ClientSocket.NoDelay = true;
+            ClientSocket = new Socket(localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+            {
+                NoDelay = true
+            };
 
-            SocketAsyncEventArgs connSocketAsyncEventArgs = new SocketAsyncEventArgs();
-            connSocketAsyncEventArgs.RemoteEndPoint = localEndPoint;
+            SocketAsyncEventArgs connSocketAsyncEventArgs = new SocketAsyncEventArgs
+            {
+                RemoteEndPoint = localEndPoint
+            };
             connSocketAsyncEventArgs.Completed += IO_Completed;
+
 
             if (!ClientSocket.ConnectAsync(connSocketAsyncEventArgs))
             {
@@ -108,6 +118,12 @@ namespace MinecraftTunnel.Core
                 }
             }
         }
+
+        public void SendAsync(byte[] packet)
+        {
+            throw new NotImplementedException();
+        }
+
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
             OnClose.Invoke(PlayerToken);

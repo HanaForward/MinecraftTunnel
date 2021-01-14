@@ -43,6 +43,10 @@ namespace MinecraftTunnel.Core
                 TokenPool.Push(playerToken);
             }
         }
+        public void SendAsync(byte[] packet)
+        {
+            throw new NotImplementedException();
+        }
         public override void Start(string IP, int Port)
         {
             IPAddress iPAddress = IPAddress.Parse(IP);
@@ -153,7 +157,6 @@ namespace MinecraftTunnel.Core
             int offset = playerToken.ReceiveEventArgs.Offset;
             int count = playerToken.ReceiveEventArgs.BytesTransferred;
             byte[] Buffer = playerToken.ReceiveEventArgs.Buffer;
-            // 解析数据包
             if (count > 0 && playerToken.ReceiveEventArgs.SocketError == SocketError.Success)
             {
                 byte[] packet = new byte[count];
