@@ -20,6 +20,7 @@ namespace MinecraftTunnel.Common
 
         public DateTime ConnectDateTime;                     // 连接时间
         public DateTime EndTime;                             // 到期时间
+        internal bool Tunnel;
 
         public void StartTunnel()
         {
@@ -29,6 +30,8 @@ namespace MinecraftTunnel.Common
 
         public void Login(string ServerAddress, ushort ServerPort)
         {
+            Tunnel = true;
+
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 Handshake handshake = new Handshake();
@@ -61,7 +64,6 @@ namespace MinecraftTunnel.Common
                 Array.Copy(memoryStream.GetBuffer(), 0, buffer, 0, size);
                 ClientCore.Socket.Send(buffer);
             }
-
         }
 
         public void CloseServer()

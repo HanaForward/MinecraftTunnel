@@ -29,7 +29,6 @@ namespace MinecraftTunnel.Core
             this.Logger = Logger;
             this.Configuration = Configuration;
         }
-
         public void SendPacket(byte[] Packet)
         {
             SendEventArgs.SetBuffer(Packet);
@@ -54,13 +53,14 @@ namespace MinecraftTunnel.Core
                 NoDelay = true
             };
 
+            SendEventArgs = new SocketAsyncEventArgs();
+            SendEventArgs.UserToken = PlayerToken;
+
             SocketAsyncEventArgs connSocketAsyncEventArgs = new SocketAsyncEventArgs
             {
                 RemoteEndPoint = localEndPoint
             };
             connSocketAsyncEventArgs.Completed += IO_Completed;
-
-
             if (!Socket.ConnectAsync(connSocketAsyncEventArgs))
             {
                 ProcessConnect(connSocketAsyncEventArgs);
@@ -120,14 +120,9 @@ namespace MinecraftTunnel.Core
                 {
                     ProcessReceive(receiveSocketAsyncEventArgs);
                 }
+                PlayerToken.Login("mc.hypixel.net", 65535);
             }
         }
-
-        public void SendAsync(byte[] packet)
-        {
-            throw new NotImplementedException();
-        }
-
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
             OnClose.Invoke(PlayerToken);

@@ -62,7 +62,7 @@ namespace MinecraftTunnel.Service
                     playerToken.StartTunnel();
                     playerToken.PlayerName = block.readString();
                     ushort.TryParse(Configuration["ServerAddress"], out ushort ServerPort);
-                    playerToken.Login(Configuration["ServerAddress"], ServerPort);
+                    // playerToken.Login(Configuration["Query:ServerAddress"], 25565);
                     return;
                 }
                 Handshake handshake = EntityMapper.MapToEntities<Handshake>(block);

@@ -8,7 +8,7 @@ using System.Net.Sockets;
 
 namespace MinecraftTunnel.Core
 {
-    public class ServerCore : IServerCore
+    public class ServerCore
     {
         public readonly ILogger ILogger;                               // 日志
         public readonly IConfiguration IConfiguration;                 // 配置文件
