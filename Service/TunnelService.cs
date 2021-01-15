@@ -111,6 +111,7 @@ namespace MinecraftTunnel.Service
             if (playerToken.Tunnel)
             {
                 playerToken.ClientCore.SendPacket(Packet);
+                return;
             }
             List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(playerToken.Compression, Packet);
             foreach (var protocolHeand in protocolHeands)
