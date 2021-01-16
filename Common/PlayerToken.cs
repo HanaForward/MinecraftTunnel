@@ -30,40 +30,39 @@ namespace MinecraftTunnel.Common
 
         public void Login(string ServerAddress, ushort ServerPort)
         {
+
+            MemoryStream memoryStream1 = new MemoryStream();
+            Handshake handshake = new Handshake();
+            memoryStream1.WriteInt(0);
+            memoryStream1.WriteInt(handshake.PacketId);
+            memoryStream1.WriteInt(ProtocolVersion);
+            memoryStream1.WriteString(ServerAddress, true);
+            memoryStream1.WriteUShort(ServerPort);
+            memoryStream1.WriteInt((int)NextState.login);
+            byte[] buffer = new byte[memoryStream1.Position];
+            int size1 = (int)memoryStream1.Position - 1;
+            memoryStream1.Position = 0;
+            memoryStream1.WriteInt(size1);
+            Array.Copy(memoryStream1.GetBuffer(), 0, buffer, 0, buffer.Length);
+            ClientCore.Socket.Send(buffer);
+
+
+            MemoryStream memoryStream = new MemoryStream();
+            Login login = new Login();
+            login.Name = PlayerName;
+            memoryStream.WriteInt(0);
+            memoryStream.WriteInt(login.PacketId);
+            memoryStream.WriteString(PlayerName, true);
+            byte[] buffer2 = new byte[memoryStream.Position];
+            int size = (int)memoryStream.Position - 1;
+            memoryStream.Position = 0;
+            memoryStream.WriteInt(size);
+            Array.Copy(memoryStream.GetBuffer(), 0, buffer2, 0, buffer2.Length);
+
+            ClientCore.Socket.Send(buffer2);
+
             Tunnel = true;
 
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                Handshake handshake = new Handshake();
-                memoryStream.WriteInt(0);
-                memoryStream.WriteInt(handshake.PacketId);
-                memoryStream.WriteInt(ProtocolVersion);
-                memoryStream.WriteString(ServerAddress, true);
-                memoryStream.WriteUShort(ServerPort);
-                memoryStream.WriteInt(handshake.nextState);
-                int size = (int)memoryStream.Position - 4;
-                memoryStream.Position = 0;
-                memoryStream.WriteInt(size);
-                byte[] buffer = new byte[size];
-                Array.Copy(memoryStream.GetBuffer(), 0, buffer, 0, size);
-                ClientCore.Socket.Send(buffer);
-            }
-
-            using (MemoryStream memoryStream = new MemoryStream())
-            {
-                Login login = new Login();
-                login.Name = PlayerName;
-
-                memoryStream.WriteInt(0);
-                memoryStream.WriteInt(login.PacketId);
-                memoryStream.WriteString(PlayerName, true);
-                int size = (int)memoryStream.Position - 4;
-                memoryStream.Position = 0;
-                memoryStream.WriteInt(size);
-                byte[] buffer = new byte[size];
-                Array.Copy(memoryStream.GetBuffer(), 0, buffer, 0, size);
-                ClientCore.Socket.Send(buffer);
-            }
         }
 
         public void CloseServer()
