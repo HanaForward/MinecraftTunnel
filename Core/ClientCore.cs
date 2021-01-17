@@ -5,7 +5,6 @@ using MinecraftTunnel.Service;
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 
 namespace MinecraftTunnel.Core
 {
@@ -122,12 +121,14 @@ namespace MinecraftTunnel.Core
         }
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
-            // OnClose.Invoke(PlayerToken);
+            Stop();
+            OnClose.Invoke(PlayerToken);
         }
         public void Stop()
         {
             Socket.Shutdown(SocketShutdown.Both);
             Socket.Close();
+            Socket.Dispose();
         }
     }
 }
