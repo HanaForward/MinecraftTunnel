@@ -5,7 +5,6 @@ using MinecraftTunnel.Common;
 using MinecraftTunnel.Service;
 using System;
 using System.Net.Sockets;
-using System.Threading.Tasks;
 
 namespace MinecraftTunnel.Core
 {
@@ -15,18 +14,15 @@ namespace MinecraftTunnel.Core
         public readonly IConfiguration IConfiguration;                 // 配置文件
         public readonly SemaphoreService SemaphoreService;
 
-        protected byte[] ReceiveBuffer;
+        private byte[] ReceiveBuffer;
 
         private IServiceScope ServiceScope;
-        public Socket Socket;
+        private Socket Socket;
         private PlayerToken playerToken;
-
-        public SocketAsyncEventArgs ReceiveEventArgs;
-        // public SocketAsyncEventArgs SendEventArgs;
+        private SocketAsyncEventArgs ReceiveEventArgs;
 
         #region 事件
         public static ServerReceive OnServerReceive;
-        public static ServerSend OnServerSend;
         public static PlayerLeave OnClose;
         #endregion
 
@@ -46,10 +42,9 @@ namespace MinecraftTunnel.Core
 
 
             ReceiveEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-
         }
 
-        public void SendPacket(byte[]? buffer, int offset, int count)
+        public void SendPacket(byte[] buffer, int offset, int count)
         {
             SocketAsyncEventArgs SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.SetBuffer(buffer, offset, count);
@@ -124,6 +119,7 @@ namespace MinecraftTunnel.Core
         }
         public void Stop()
         {
+            ServiceScope.Dispose();
             SemaphoreService.Semaphore.Release();
             Socket.Shutdown(SocketShutdown.Both);
             Socket.Close();

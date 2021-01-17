@@ -3,11 +3,9 @@ using System;
 
 namespace MinecraftTunnel.Protocol
 {
-    public interface IProtocol<T>
+    public interface IProtocol
     {
-        public T Instance { get; set; }
-
         public bool NeedAnalysis { get; set; }
-        public Action<PlayerToken, T> Action { get; set; }
+        public Action<PlayerToken, object> Action { get; set; }
     }
 }

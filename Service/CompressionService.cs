@@ -5,12 +5,11 @@ using System;
 
 namespace MinecraftTunnel.Service
 {
-    public class CompressionService : IProtocol<SetCompression>
+    public class CompressionService : IProtocol
     {
         public SetCompression Instance { get; set; }
         public bool NeedAnalysis { get; set; } = false;
         public Action<PlayerToken, SetCompression> Action { get; set; }
-
         public void Compression(PlayerToken playerToken, SetCompression setCompression)
         {
             playerToken.Compression = true;

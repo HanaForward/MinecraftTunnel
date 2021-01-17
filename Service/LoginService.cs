@@ -12,7 +12,7 @@ using System.Text.Json;
 
 namespace MinecraftTunnel.Service
 {
-    public class LoginService : IProtocol<object>
+    public class LoginService : IProtocol
     {
         private readonly ILogger Logger;
         private readonly TotalService TotalService;

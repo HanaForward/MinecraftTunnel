@@ -21,7 +21,6 @@ namespace MinecraftTunnel.Core
 
         #region 事件
         public static TunnelReceive OnTunnelReceive;
-        public static TunnelSend OnTunnelSend;
         public static PlayerLeave OnClose;
         #endregion
 

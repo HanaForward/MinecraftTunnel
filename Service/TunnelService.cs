@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MinecraftTunnel.Common;
 using MinecraftTunnel.Core;
+using MinecraftTunnel.Model.Protocol.ServerBound;
 using MinecraftTunnel.Protocol;
 using MinecraftTunnel.Service.ProtocolService;
 using System;
@@ -14,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace MinecraftTunnel.Service
 {
+    #region 事件委托
     /// <summary>
     ///  当玩家进入隧道
     /// </summary>
@@ -48,6 +50,7 @@ namespace MinecraftTunnel.Service
     /// <param name="playerToken"></param>
     /// <param name="Packet"></param>
     public delegate void TunnelSend(PlayerToken playerToken, byte[] Packet);
+    #endregion
 
     public class TunnelService : IHostedService
     {
@@ -59,7 +62,7 @@ namespace MinecraftTunnel.Service
         private readonly TotalService totalService;
 
         private Dictionary<int, Type> Collections = new Dictionary<int, Type>();
-        public Dictionary<int, IProtocol<object>> ProtocalAction = new Dictionary<int, IProtocol<object>>();
+        private Dictionary<int, IProtocol> ProtocalAction = new Dictionary<int, IProtocol>();
 
         public TunnelService(IServiceProvider ServiceProvider, ILogger<TunnelService> Logger, IConfiguration Configuration, AnalysisService AnalysisService, TotalService totalService)
         {
@@ -72,35 +75,19 @@ namespace MinecraftTunnel.Service
             ServerCore.OnClose += Even_OnClose;
             ClientCore.OnClose += Even_OnClose;
 
-            
             ServerCore.OnServerReceive += Even_OnServerReceive;
-            ServerCore.OnServerSend += Even_OnServerSend;
             ClientCore.OnTunnelReceive += Even_TunnelReceive;
-            ClientCore.OnTunnelSend += Even_TunnelSend;
-            
 
             Collections.Add(0, typeof(LoginService));
-            // Collections.Add(3, typeof(CompressionService));
+            Collections.Add(3, typeof(CompressionService));
 
             foreach (var item in Collections)
             {
                 Type type = item.Value;
-                ProtocalAction.Add(item.Key, (IProtocol<object>)ServiceProvider.GetService(type));
+                ProtocalAction.Add(item.Key, (IProtocol)ServiceProvider.GetService(type));
             }
         }
 
-        private void Even_OnClose(PlayerToken playerToken)
-        {
-
-        }
-        private void Even_OnServerSend(PlayerToken PlayerToken, byte[] Packet)
-        {
-            List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(PlayerToken.Compression, Packet);
-            foreach (var protocolHeand in protocolHeands)
-            {
-                Logger.LogInformation($"ServerSend  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
-            }
-        }
         private void Even_OnServerReceive(PlayerToken playerToken, byte[] Packet)
         {
             if (playerToken.Tunnel)
@@ -115,15 +102,13 @@ namespace MinecraftTunnel.Service
             List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(playerToken.Compression, Packet);
             foreach (var protocolHeand in protocolHeands)
             {
-                /*
-                if (ProtocalAction.TryGetValue(protocolHeand.PacketId, out IProtocol<object> ActionProtocol))
+                if (ProtocalAction.TryGetValue(protocolHeand.PacketId, out IProtocol ActionProtocol))
                 {
                     object model = protocolHeand.PacketData;
                     if (ActionProtocol.NeedAnalysis)
                         model = AnalysisService.AnalysisData<object>(protocolHeand.PacketId, protocolHeand.PacketData);
-                    ActionProtocol.Action?.Invoke(playerToken, model);
+                    ActionProtocol.Action.Invoke(playerToken, model);
                 }
-                */
                 Logger.LogInformation($"ServerReceive  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
             }
         }
@@ -132,12 +117,10 @@ namespace MinecraftTunnel.Service
             playerToken.ServerCore.SendPacket(Packet);
             Logger.LogInformation($"TunnelReceive  ->  Length : {Packet.Length}");
         }
-        private void Even_TunnelSend(PlayerToken playerToken, byte[] Packet)
+        private void Even_OnClose(PlayerToken playerToken)
         {
-            Logger.LogInformation($"TunnelSend  ->  Length : {Packet.Length}");
+
         }
-
-
         public Task StartAsync(CancellationToken cancellationToken)
         {
             ServerListen serverListen = ServiceProvider.GetService<ServerListen>();

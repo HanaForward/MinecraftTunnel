@@ -15,13 +15,9 @@ namespace MinecraftTunnel.Protocol
             if (!cachedMappers.ContainsKey(typeof(T)))
             {
                 Type type = typeof(T);
-
-
                 Type[] methodArgs = { typeof(Block) };
-
                 DynamicMethod dm = new DynamicMethod("MapDR", returnType: type, parameterTypes: methodArgs, Assembly.GetExecutingAssembly().GetType().Module);
                 ILGenerator il = dm.GetILGenerator();
-
                 il.DeclareLocal(typeof(T));
                 il.Emit(OpCodes.Newobj, type.GetConstructor(Type.EmptyTypes));
                 foreach (PropertyInfo propertyInfo in typeof(T).GetProperties())
@@ -39,7 +35,7 @@ namespace MinecraftTunnel.Protocol
                             il.Emit(OpCodes.Callvirt, typeof(Block).GetMethod("readVarLong"));
                             break;
                         case "String":
-                             // obj = block.readString();
+                            // obj = block.readString();
                             il.Emit(OpCodes.Callvirt, typeof(Block).GetMethod("readString", new Type[] { }));
                             break;
                         case "Boolean":
@@ -74,8 +70,6 @@ namespace MinecraftTunnel.Protocol
                     il.Emit(OpCodes.Callvirt, typeof(T).GetMethod("set_" + propertyInfo.Name, new Type[] { propertyInfo.PropertyType }));
                 }
                 il.Emit(OpCodes.Ret);
-
-
                 cachedMappers.Add(typeof(T), dm.CreateDelegate(typeof(mapEntity<T>)));
             }
             mapEntity<T> invokeMapEntity = (mapEntity<T>)cachedMappers[typeof(T)];
