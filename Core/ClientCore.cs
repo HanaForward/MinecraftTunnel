@@ -14,7 +14,6 @@ namespace MinecraftTunnel.Core
         public readonly ILogger Logger;                               // 日志
         public readonly IConfiguration Configuration;                 // 配置文件
         private Socket Socket;                                         // Socket
-        private SocketAsyncEventArgs SendEventArgs;
         private SocketAsyncEventArgs ReceiveEventArgs;
 
 
@@ -34,6 +33,7 @@ namespace MinecraftTunnel.Core
         }
         public void SendPacket(byte[] Packet)
         {
+            SocketAsyncEventArgs SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.SetBuffer(Packet);
             Socket.SendAsync(SendEventArgs);
         }
@@ -55,9 +55,6 @@ namespace MinecraftTunnel.Core
             {
                 NoDelay = true
             };
-
-            SendEventArgs = new SocketAsyncEventArgs();
-            SendEventArgs.UserToken = PlayerToken;
 
             SocketAsyncEventArgs connSocketAsyncEventArgs = new SocketAsyncEventArgs
             {
@@ -81,9 +78,6 @@ namespace MinecraftTunnel.Core
             {
                 case SocketAsyncOperation.Receive:
                     ProcessReceive(e);
-                    break;
-                case SocketAsyncOperation.Send:
-                    ProcessSend(e);
                     break;
                 case SocketAsyncOperation.Connect:
                     ProcessConnect(e);
@@ -110,15 +104,6 @@ namespace MinecraftTunnel.Core
             else
             {
                 CloseClientSocket(e);
-            }
-        }
-        private void ProcessSend(SocketAsyncEventArgs e)
-        {
-            if (OnTunnelSend != null)
-            {
-                byte[] Buffer = new byte[e.BytesTransferred];
-                Array.Copy(e.Buffer, e.Offset, Buffer, 0, e.BytesTransferred);
-                OnTunnelSend.Invoke(PlayerToken, Buffer);
             }
         }
         private void ProcessConnect(SocketAsyncEventArgs e)

@@ -22,7 +22,7 @@ namespace MinecraftTunnel.Core
         private PlayerToken playerToken;
 
         public SocketAsyncEventArgs ReceiveEventArgs;
-        public SocketAsyncEventArgs SendEventArgs;
+        // public SocketAsyncEventArgs SendEventArgs;
 
         #region 事件
         public static ServerReceive OnServerReceive;
@@ -43,22 +43,21 @@ namespace MinecraftTunnel.Core
                 UserToken = this
             };
             ReceiveEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
-            SendEventArgs = new SocketAsyncEventArgs
-            {
-                UserToken = this
-            };
+
 
             ReceiveEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-            SendEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
+          
         }
 
         public void SendPacket(byte[]? buffer, int offset, int count)
         {
+            SocketAsyncEventArgs SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.SetBuffer(buffer, offset, count);
             Socket.SendAsync(SendEventArgs);
         }
         public void SendPacket(byte[] Packet)
         {
+            SocketAsyncEventArgs SendEventArgs = new SocketAsyncEventArgs();
             SendEventArgs.SetBuffer(Packet);
             Socket.SendAsync(SendEventArgs);
         }
@@ -88,25 +87,9 @@ namespace MinecraftTunnel.Core
                 case SocketAsyncOperation.Receive:
                     ProcessReceive(e);
                     break;
-                case SocketAsyncOperation.Send:
-                    ProcessSend(e);
-                    break;
                 default:
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
-        }
-        /// <summary>
-        /// 消息发送回调
-        /// </summary>
-        /// <param name="socketAsync"></param>
-        private void ProcessSend(SocketAsyncEventArgs socketAsync)
-        {
-            int count = SendEventArgs.BytesTransferred;
-            int offset = SendEventArgs.Offset;
-            byte[] buffer = SendEventArgs.Buffer;
-            byte[] packet = new byte[count];
-            Array.Copy(buffer, offset, packet, 0, count);
-            OnServerSend?.Invoke(playerToken, packet);
         }
         /// <summary>
         /// 消息处理的回调
