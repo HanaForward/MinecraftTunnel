@@ -91,14 +91,7 @@ namespace MinecraftTunnel.Service
 
         private void Even_OnClose(PlayerToken playerToken)
         {
-            if (playerToken.ServerCore != null)
-            {
-                playerToken.CloseServer();
-            }
-            if (playerToken.ClientCore != null)
-            {
-                playerToken.CloseClient();
-            }
+
         }
         private void Even_OnServerSend(PlayerToken PlayerToken, byte[] Packet)
         {

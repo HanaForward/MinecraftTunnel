@@ -46,7 +46,7 @@ namespace MinecraftTunnel.Core
 
 
             ReceiveEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
-          
+
         }
 
         public void SendPacket(byte[]? buffer, int offset, int count)
@@ -119,14 +119,15 @@ namespace MinecraftTunnel.Core
         }
         private void CloseClientSocket(PlayerToken playerToken)
         {
+            Stop();
             OnClose.Invoke(playerToken);
         }
         public void Stop()
         {
+            SemaphoreService.Semaphore.Release();
             Socket.Shutdown(SocketShutdown.Both);
             Socket.Close();
-
-            SemaphoreService.Semaphore.Release();
+            Socket.Dispose();
             // ServiceScope.Dispose();
         }
     }

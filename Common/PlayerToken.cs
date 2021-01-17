@@ -66,16 +66,5 @@ namespace MinecraftTunnel.Common
             Tunnel = true;
 
         }
-
-        public void CloseServer()
-        {
-            ServerCore.Stop();
-            ServerCore = null;
-        }
-        public void CloseClient()
-        {
-            ClientCore.Stop();
-            ClientCore = null;
-        }
     }
 }
