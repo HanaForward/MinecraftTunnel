@@ -6,7 +6,6 @@ using MinecraftTunnel.Service;
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace MinecraftTunnel.Core
 {
@@ -15,7 +14,6 @@ namespace MinecraftTunnel.Core
         public readonly ILogger Logger;                               // 日志
         public readonly IConfiguration Configuration;                 // 配置文件
         private readonly IServiceProvider ServiceProvider;            // 服务
-        private ushort MaxConnections;                                // 最大连接数
 
         private Socket ServerSocket;                                    // Socket
         private SemaphoreService SemaphoreService;

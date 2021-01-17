@@ -33,7 +33,9 @@ namespace MinecraftTunnel
                      services.AddSingleton<CompressionService>();
 
                      services.AddHostedService<TunnelService>();
-                     services.AddSingleton<ServerCore>();
+
+
+                     services.AddScoped<ServerCore>();
 
 
                      services.AddSingleton(o =>

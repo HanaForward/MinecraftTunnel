@@ -30,7 +30,7 @@ namespace MinecraftTunnel.Common
 
         public void Login(string ServerAddress, ushort ServerPort)
         {
-
+            /*
             MemoryStream memoryStream1 = new MemoryStream();
             Handshake handshake = new Handshake();
             memoryStream1.WriteInt(0);
@@ -44,7 +44,8 @@ namespace MinecraftTunnel.Common
             memoryStream1.Position = 0;
             memoryStream1.WriteInt(size1);
             Array.Copy(memoryStream1.GetBuffer(), 0, buffer, 0, buffer.Length);
-            ClientCore.Socket.Send(buffer);
+
+            ClientCore.SendPacket(buffer);
 
 
             MemoryStream memoryStream = new MemoryStream();
@@ -59,8 +60,9 @@ namespace MinecraftTunnel.Common
             memoryStream.WriteInt(size);
             Array.Copy(memoryStream.GetBuffer(), 0, buffer2, 0, buffer2.Length);
 
-            ClientCore.Socket.Send(buffer2);
+            ClientCore.SendPacket(buffer2);
 
+            */
             Tunnel = true;
 
         }

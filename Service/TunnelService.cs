@@ -72,10 +72,12 @@ namespace MinecraftTunnel.Service
             ServerCore.OnClose += Even_OnClose;
             ClientCore.OnClose += Even_OnClose;
 
+            
             ServerCore.OnServerReceive += Even_OnServerReceive;
             ServerCore.OnServerSend += Even_OnServerSend;
             ClientCore.OnTunnelReceive += Even_TunnelReceive;
             ClientCore.OnTunnelSend += Even_TunnelSend;
+            
 
             Collections.Add(0, typeof(LoginService));
             // Collections.Add(3, typeof(CompressionService));
@@ -111,11 +113,16 @@ namespace MinecraftTunnel.Service
             if (playerToken.Tunnel)
             {
                 playerToken.ClientCore.SendPacket(Packet);
-                return;
+            }
+            else
+            {
+                playerToken.StartTunnel();
+                playerToken.ClientCore.SendPacket(Packet);
             }
             List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(playerToken.Compression, Packet);
             foreach (var protocolHeand in protocolHeands)
             {
+                /*
                 if (ProtocalAction.TryGetValue(protocolHeand.PacketId, out IProtocol<object> ActionProtocol))
                 {
                     object model = protocolHeand.PacketData;
@@ -123,6 +130,7 @@ namespace MinecraftTunnel.Service
                         model = AnalysisService.AnalysisData<object>(protocolHeand.PacketId, protocolHeand.PacketData);
                     ActionProtocol.Action?.Invoke(playerToken, model);
                 }
+                */
                 Logger.LogInformation($"ServerReceive  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
             }
         }

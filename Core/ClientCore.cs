@@ -5,6 +5,7 @@ using MinecraftTunnel.Service;
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace MinecraftTunnel.Core
 {
@@ -12,9 +13,11 @@ namespace MinecraftTunnel.Core
     {
         public readonly ILogger Logger;                               // 日志
         public readonly IConfiguration Configuration;                 // 配置文件
-        public Socket Socket;                                   // Socket
-        public SocketAsyncEventArgs SendEventArgs;
-        private SocketAsyncEventArgs receiveSocketAsyncEventArgs;
+        private Socket Socket;                                         // Socket
+        private SocketAsyncEventArgs SendEventArgs;
+        private SocketAsyncEventArgs ReceiveEventArgs;
+
+
         private byte[] ReceiveBuffer = new byte[ushort.MaxValue];
         private PlayerToken PlayerToken;
 
@@ -60,6 +63,12 @@ namespace MinecraftTunnel.Core
             {
                 RemoteEndPoint = localEndPoint
             };
+
+            connSocketAsyncEventArgs.Completed += IO_Completed;
+            Socket.Connect(localEndPoint);
+            ProcessConnect(connSocketAsyncEventArgs);
+
+            return;
             connSocketAsyncEventArgs.Completed += IO_Completed;
             if (!Socket.ConnectAsync(connSocketAsyncEventArgs))
             {
@@ -86,14 +95,17 @@ namespace MinecraftTunnel.Core
         }
         private void ProcessReceive(SocketAsyncEventArgs e)
         {
-            if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
+            if (ReceiveEventArgs.BytesTransferred > 0 && ReceiveEventArgs.SocketError == SocketError.Success)
             {
                 if (OnTunnelReceive != null)
                 {
-                    byte[] Buffer = new byte[e.BytesTransferred];
-                    Array.Copy(e.Buffer, e.Offset, Buffer, 0, e.BytesTransferred);
-                    OnTunnelReceive.Invoke(PlayerToken, Buffer);
+                    byte[] Buffer = new byte[ReceiveEventArgs.BytesTransferred];
+                    Array.Copy(ReceiveEventArgs.Buffer, ReceiveEventArgs.Offset, Buffer, 0, ReceiveEventArgs.BytesTransferred);
+                    OnTunnelReceive(PlayerToken, Buffer);
                 }
+                bool willRaiseEvent = Socket.ReceiveAsync(ReceiveEventArgs);
+                if (!willRaiseEvent)
+                    ProcessReceive(ReceiveEventArgs);
             }
             else
             {
@@ -113,19 +125,19 @@ namespace MinecraftTunnel.Core
         {
             if (e.SocketError == SocketError.Success)
             {
-                receiveSocketAsyncEventArgs = new SocketAsyncEventArgs();
-                receiveSocketAsyncEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
-                receiveSocketAsyncEventArgs.Completed += IO_Completed;
-                if (!Socket.ReceiveAsync(receiveSocketAsyncEventArgs))
+                ReceiveEventArgs = new SocketAsyncEventArgs();
+                ReceiveEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
+                ReceiveEventArgs.Completed += IO_Completed;
+                if (!Socket.ReceiveAsync(ReceiveEventArgs))
                 {
-                    ProcessReceive(receiveSocketAsyncEventArgs);
+                    ProcessReceive(ReceiveEventArgs);
                 }
                 PlayerToken.Login("mc.hypixel.net", 65535);
             }
         }
         private void CloseClientSocket(SocketAsyncEventArgs e)
         {
-            OnClose.Invoke(PlayerToken);
+            // OnClose.Invoke(PlayerToken);
         }
         public void Stop()
         {

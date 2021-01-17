@@ -12,13 +12,11 @@
         {
             this.block = block;
             this.PacketSize = block.readVarInt();
-
-            int step = block.step;
-            this.PacketId = block.readVarInt();
-            int data_step = block.step - step;
-            int readSize = PacketSize - data_step;
-            if (readSize > 0)
-                this.PacketData = block.readPacket(readSize);
+            byte[] PacketData = block.readPacket(PacketSize);
+            Block b = new Block(PacketData);
+            this.PacketId = b.readVarInt();
+            if (PacketSize > 0)
+                this.PacketData = b.readPacket();
         }
     }
 }
