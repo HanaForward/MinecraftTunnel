@@ -34,13 +34,8 @@ namespace MinecraftTunnel.Core
 
             ReceiveBuffer = new byte[ushort.MaxValue];
 
-            ReceiveEventArgs = new SocketAsyncEventArgs
-            {
-                UserToken = this
-            };
+            ReceiveEventArgs = new SocketAsyncEventArgs();
             ReceiveEventArgs.SetBuffer(ReceiveBuffer, 0, ReceiveBuffer.Length);
-
-
             ReceiveEventArgs.Completed += new EventHandler<SocketAsyncEventArgs>(IO_Completed);
         }
 
@@ -60,15 +55,15 @@ namespace MinecraftTunnel.Core
         {
             this.Socket = Socket;
             this.playerToken = playerToken;
-        }
-        public void Start(IServiceScope ServiceScope)
-        {
-            this.ServiceScope = ServiceScope;
             bool willRaiseEvent = Socket.ReceiveAsync(ReceiveEventArgs);
             if (!willRaiseEvent)
             {
                 ProcessReceive(ReceiveEventArgs);
             }
+        }
+        public void Start(IServiceScope ServiceScope)
+        {
+            this.ServiceScope = ServiceScope;
         }
         /// <summary>
         /// 每当套接字上完成接收或发送操作时，都会调用此方法。
@@ -109,19 +104,15 @@ namespace MinecraftTunnel.Core
             }
             else
             {
-                CloseClientSocket(playerToken);
+                Stop();
             }
         }
-        private void CloseClientSocket(PlayerToken playerToken)
+        private void Stop()
         {
-            Stop();
             OnClose.Invoke(playerToken);
-        }
-        public void Stop()
-        {
             ServiceScope.Dispose();
             SemaphoreService.Semaphore.Release();
-            Socket.Shutdown(SocketShutdown.Both);
+            // Socket.Shutdown(SocketShutdown.Send);
             Socket.Close();
             Socket.Dispose();
             // ServiceScope.Dispose();
