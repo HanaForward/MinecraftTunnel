@@ -14,10 +14,10 @@ namespace MinecraftTunnel.Service.ProtocolService
         {
             this.Logger = Logger;
         }
-        public async Task<T> AnalysisData<T>(int PacketId, byte[] PacketData)
+        public async Task<object> AnalysisData(int PacketId, byte[] PacketData)
         {
             Block block = new Block(PacketData);
-            return EntityMapper.MapToEntities<T>(block);
+            return EntityMapper.MapToEntities(PacketId, block);
         }
 
         public List<ProtocolHeand> AnalysisHeand(bool Compression, byte[] Packet)

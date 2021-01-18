@@ -30,11 +30,11 @@ namespace MinecraftTunnel.Common
 
         public void Login(string ServerAddress, ushort ServerPort)
         {
-            /*
+            
             MemoryStream memoryStream1 = new MemoryStream();
             Handshake handshake = new Handshake();
             memoryStream1.WriteInt(0);
-            memoryStream1.WriteInt(handshake.PacketId);
+            memoryStream1.WriteInt(Handshake.PacketId);
             memoryStream1.WriteInt(ProtocolVersion);
             memoryStream1.WriteString(ServerAddress, true);
             memoryStream1.WriteUShort(ServerPort);
@@ -61,10 +61,6 @@ namespace MinecraftTunnel.Common
             Array.Copy(memoryStream.GetBuffer(), 0, buffer2, 0, buffer2.Length);
 
             ClientCore.SendPacket(buffer2);
-
-            */
-            Tunnel = true;
-
         }
     }
 }

@@ -6,6 +6,6 @@ namespace MinecraftTunnel.Protocol
     public interface IProtocol
     {
         public bool NeedAnalysis { get; set; }
-        public Action<PlayerToken, object> Action { get; set; }
+        public Func<PlayerToken, object, bool> Action { get; set; }
     }
 }

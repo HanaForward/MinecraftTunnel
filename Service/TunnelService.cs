@@ -90,26 +90,28 @@ namespace MinecraftTunnel.Service
 
         private void Even_OnServerReceive(PlayerToken playerToken, byte[] Packet)
         {
-            if (playerToken.Tunnel)
-            {
-                playerToken.ClientCore.SendPacket(Packet);
-            }
-            else
-            {
-                playerToken.StartTunnel();
-                playerToken.ClientCore.SendPacket(Packet);
-            }
+            bool flag = true;
             List<ProtocolHeand> protocolHeands = AnalysisService.AnalysisHeand(playerToken.Compression, Packet);
             foreach (var protocolHeand in protocolHeands)
             {
                 if (ProtocalAction.TryGetValue(protocolHeand.PacketId, out IProtocol ActionProtocol))
                 {
-                    object model = protocolHeand.PacketData;
+                    object model = null;
                     if (ActionProtocol.NeedAnalysis)
-                        model = AnalysisService.AnalysisData<object>(protocolHeand.PacketId, protocolHeand.PacketData);
-                    ActionProtocol.Action.Invoke(playerToken, model);
+                    {
+                        model = AnalysisService.AnalysisData(protocolHeand.PacketId, protocolHeand.PacketData);
+                        flag = ActionProtocol.Action.Invoke(playerToken, model);
+                    }
+                    else
+                    {
+                        flag = ActionProtocol.Action.Invoke(playerToken, protocolHeand.PacketData);
+                    }
                 }
                 Logger.LogInformation($"ServerReceive  -> PacketId : {protocolHeand.PacketId} , Size : {protocolHeand.PacketSize} , PacketData : {protocolHeand.PacketData}");
+            }
+            if (flag & playerToken.StartLogin)
+            {
+                playerToken.ClientCore.SendPacket(Packet);
             }
         }
         private void Even_TunnelReceive(PlayerToken playerToken, byte[] Packet)

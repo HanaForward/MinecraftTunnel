@@ -24,16 +24,20 @@ namespace MinecraftTunnel.Service
             this.Configuration = Configuration;
             this.TotalService = TotalService;
             this.Action = Auth;
+
+
+            EntityMapper.PacketType.Add(Handshake.PacketId, typeof(Handshake));
         }
 
         public object Instance { get; set; }
-        public Action<PlayerToken, object> Action { get; set; }
+        public Func<PlayerToken, object, bool> Action { get; set; }
         public bool NeedAnalysis { get; set; } = false;
-        private void Auth(PlayerToken playerToken, object obj)
+        private bool Auth(PlayerToken playerToken, object obj)
         {
             try
             {
-                if (obj == null)
+                byte[] buffer = (byte[])obj;
+                if (buffer.Length == 0)
                 {
                     Response response = new Response("1.8.9", playerToken.ProtocolVersion);
                     response.players.online = TotalService.TotalPlayer;
@@ -53,19 +57,18 @@ namespace MinecraftTunnel.Service
                             playerToken.ServerCore.SendPacket(memoryStream.GetBuffer(), 0, (int)memoryStream.Position);
                         }
                     }
-                    return;
+                    return false;
                 }
-                byte[] buffer = (byte[])obj;
                 Block block = new Block(buffer);
                 if (playerToken.StartLogin)
                 {
                     playerToken.StartTunnel();
                     playerToken.PlayerName = block.readString();
                     ushort.TryParse(Configuration["ServerAddress"], out ushort ServerPort);
-                    // playerToken.Login(Configuration["Query:ServerAddress"], 25565);
-                    return;
+                    playerToken.Login(Configuration["Query:ServerAddress"], 25565);
+                    return false;
                 }
-                Handshake handshake = EntityMapper.MapToEntities<Handshake>(block);
+                Handshake handshake = (Handshake)EntityMapper.MapToEntities(Handshake.PacketId, block);
                 if (handshake.NextState() == NextState.login)
                 {
                     playerToken.ProtocolVersion = handshake.ProtocolVersion;
@@ -79,7 +82,9 @@ namespace MinecraftTunnel.Service
             catch (Exception ex)
             {
                 Logger.LogError(ex.Message);
+                return false;
             }
+            return false;
         }
     }
 }

@@ -58,12 +58,6 @@ namespace MinecraftTunnel.Core
             {
                 RemoteEndPoint = localEndPoint
             };
-
-            connSocketAsyncEventArgs.Completed += IO_Completed;
-            Socket.Connect(localEndPoint);
-            ProcessConnect(connSocketAsyncEventArgs);
-
-            return;
             connSocketAsyncEventArgs.Completed += IO_Completed;
             if (!Socket.ConnectAsync(connSocketAsyncEventArgs))
             {

@@ -17,16 +17,17 @@ namespace MinecraftTunnel.Service
             this.Logger = Logger;
             this.Configuration = Configuration;
             this.TotalService = TotalService;
-            this.Action = Auth;
+            Action = Compression;
         }
         public SetCompression Instance { get; set; }
         public bool NeedAnalysis { get; set; } = false;
-        public Action<PlayerToken, SetCompression> Action { get; set; }
-        public void Compression(PlayerToken playerToken, SetCompression setCompression)
+        public Func<PlayerToken, object, bool> Action { get; set; }
+        public bool Compression(PlayerToken playerToken, object obj)
         {
+            SetCompression setCompression = obj as SetCompression;
             playerToken.Compression = true;
-
             playerToken.Threshold = setCompression.Threshold;
+            return true;
         }
     }
 }

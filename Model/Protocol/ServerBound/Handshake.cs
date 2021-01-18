@@ -29,7 +29,7 @@ namespace MinecraftTunnel.Protocol.ServerBound
             return (NextState)(int)nextState;
         }
 
-        public int PacketId = 0;
+        public static int PacketId = 0;
 
         public Handshake()
         {

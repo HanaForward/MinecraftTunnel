@@ -7,20 +7,20 @@ namespace MinecraftTunnel.Protocol
 {
     public class EntityMapper
     {
-        private delegate T mapEntity<T>(Block block);
-        private static Dictionary<Type, Delegate> cachedMappers = new Dictionary<Type, Delegate>();
-
-        public static T MapToEntities<T>(Block block)
+        private delegate object mapEntity(Block block);
+        private static Dictionary<int, Delegate> cachedMappers = new Dictionary<int, Delegate>();
+        public static Dictionary<int, Type> PacketType = new Dictionary<int, Type>();
+        public static object MapToEntities(int PacketId, Block block)
         {
-            if (!cachedMappers.ContainsKey(typeof(T)))
+            if (!cachedMappers.ContainsKey(PacketId))
             {
-                Type type = typeof(T);
+                Type type = PacketType[PacketId];
                 Type[] methodArgs = { typeof(Block) };
                 DynamicMethod dm = new DynamicMethod("MapDR", returnType: type, parameterTypes: methodArgs, Assembly.GetExecutingAssembly().GetType().Module);
                 ILGenerator il = dm.GetILGenerator();
-                il.DeclareLocal(typeof(T));
+                il.DeclareLocal(type);
                 il.Emit(OpCodes.Newobj, type.GetConstructor(Type.EmptyTypes));
-                foreach (PropertyInfo propertyInfo in typeof(T).GetProperties())
+                foreach (PropertyInfo propertyInfo in type.GetProperties())
                 {
                     il.Emit(OpCodes.Dup);
                     il.Emit(OpCodes.Ldarg_0);
@@ -67,12 +67,12 @@ namespace MinecraftTunnel.Protocol
                             il.Emit(OpCodes.Ret);
                             break;
                     }
-                    il.Emit(OpCodes.Callvirt, typeof(T).GetMethod("set_" + propertyInfo.Name, new Type[] { propertyInfo.PropertyType }));
+                    il.Emit(OpCodes.Callvirt, type.GetMethod("set_" + propertyInfo.Name, new Type[] { propertyInfo.PropertyType }));
                 }
                 il.Emit(OpCodes.Ret);
-                cachedMappers.Add(typeof(T), dm.CreateDelegate(typeof(mapEntity<T>)));
+                cachedMappers.Add(PacketId, dm.CreateDelegate(typeof(mapEntity)));
             }
-            mapEntity<T> invokeMapEntity = (mapEntity<T>)cachedMappers[typeof(T)];
+            mapEntity invokeMapEntity = (mapEntity)cachedMappers[PacketId];
             // For each row, map the row to an instance of T and yield return it
             return invokeMapEntity(block);
         }

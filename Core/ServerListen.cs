@@ -15,7 +15,7 @@ namespace MinecraftTunnel.Core
         public readonly IConfiguration Configuration;                 // 配置文件
         private readonly IServiceProvider ServiceProvider;            // 服务
 
-        private Socket ServerSocket;                                    // Socket
+        private Socket ServerSocket;                                  // Socket
         private SemaphoreService SemaphoreService;
 
         public ServerListen(ILogger<ServerListen> Logger, IConfiguration Configuration, IServiceProvider ServiceProvider, SemaphoreService SemaphoreService)
