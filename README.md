@@ -23,7 +23,9 @@ yum install unzip -y
 yum install screen -y
 
 Windows 7 ：
+
 先安装 VC++2015-2019 
+
 然后安装  KB2533623 补丁即可
 
 商业合作联系Q：931993057
