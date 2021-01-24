@@ -10,8 +10,11 @@ Windows  : 自行观看
 示例 ：
 Centos 7 :
 rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+
 yum install dotnet-runtime-5.0 -y
+
 yum install unzip -y
+
 yum install screen -y
 
 Windows 7 ：
